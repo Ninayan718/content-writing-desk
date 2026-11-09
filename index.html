@@ -214,13 +214,16 @@ details.tpl textarea{margin-top:8px;min-height:130px;font-size:12px;font-family:
 window.WD_CONTENT = {
   storageKey: 'writingDesk.v1',
 
+  // 旧版默认画像（以及后来从 33 篇 AI 文里提炼出的画像）都已作废：
+  // 那是从 AI 生成的文本里统计出来的模板痕迹，不是作者本人的写法。
+  // 这里只留「去 AI 味的底线」，并明确标注未校准，引导去校准台采集本人语感。
   defaultProfile: {
-    opening: '口语化开场，先说背景，不铺垫大词',
-    evidence: '爱晒真实数据，只用我给的数字',
-    paragraph: '一句话一段，段落短，段间空一行',
-    rhythm: '自问自答推进，不堆小标题',
-    ending: '结尾自然收束，不喊口号',
-    extra: '不用「首先/其次/最后」，不写「综上所述」，不编造经历和数据，不用「以下是」'
+    opening: '（未校准）从一个具体场景平实起句，不铺垫',
+    evidence: '（未校准）只用我给的真实数字和经历，零编造',
+    paragraph: '（未校准）短段，按语气自然分段',
+    rhythm: '（未校准）顺着事情往下说，不套模板、不自问自答',
+    ending: '（未校准）停在一件具体的事上，不升华',
+    extra: '（未校准）不替我抒情、不替我下结论；不用💡、表格、小标题；不确定就留白'
   },
 
   steps: [
@@ -233,13 +236,16 @@ window.WD_CONTENT = {
 
   promptTemplates: {
     profile: [
-      '我是一名公众号作者。下面是我的旧文：',
+      '注意：不要用 AI 生成过的旧文来「提炼风格」，那样炼出来的只是模板腔。',
+      '风格的来源是本人怎么说话，不是文章长什么样。',
+      '',
+      '下面是本人即时写下的一段口语（未润色）：',
       '',
       '{{CORPUS}}',
       '',
-      '请提炼我的写作风格画像，只输出一个 JSON，字段固定为：',
+      '请只做客观记录，输出一个 JSON，字段固定为：',
       '{"opening":"","evidence":"","paragraph":"","rhythm":"","ending":"","extra":""}',
-      '要求：每条不超过 30 字，写可执行的写法，不要评价文笔，不要输出 JSON 以外的任何内容。'
+      '要求：每条写「可执行的写法」和「明确不要做的事」，不要评价文笔，不要替本人补情绪或结论，不要输出 JSON 以外的任何内容。'
     ].join('\n'),
 
     topics: [
@@ -264,7 +270,8 @@ window.WD_CONTENT = {
       '【选题】{{TOPIC}}',
       '',
       '【输出】只给正文，不要解释、不要总结、不要写「以下是」。',
-      '一句话一段，段落之间空一行。需要配图的地方单独写一行 [[配图: 画面描述]]。'
+      '段落长短、分节、是否用小标题，一律按上面的风格画像来，不要自行套模板。',
+      '需要配图的地方单独写一行 [[配图: 画面描述]]；画像里若不要配图，就不写。'
     ].join('\n'),
 
     visual: [
@@ -287,7 +294,7 @@ window.WD_CONTENT = {
   },
 
   promptLabels: {
-    profile: '从旧文提炼风格画像',
+    profile: '从本人语感记录写法',
     topics: '基于素材出选题',
     draft: '写初稿',
     visual: '设计配图',
@@ -297,8 +304,8 @@ window.WD_CONTENT = {
   checks: [
     { id: 'slogan', label: '口号 / 套话', pattern: '综上所述|总而言之|首先|其次|最后|在这个.{0,6}时代|赋能|抓手|让我们一起|值得一提的是|不难看出', tip: '删掉，换成具体的说法' },
     { id: 'aiTone', label: 'AI 味开场', pattern: '以下是|希望对你有帮助|总结一下|总的来说|值得注意的是|在当今', tip: '直接删，正文应该自己开场' },
-    { id: 'longPara', label: '超长段落', pattern: '__LONG_PARA__', tip: '拆成一句话一段' },
-    { id: 'noNumber', label: '没有真实数字', pattern: '__NO_NUMBER__', tip: '文章说你爱晒数据，补一个真实数字' },
+    { id: 'longPara', label: '超长段落', pattern: '__LONG_PARA__', tip: '按画像里的段落习惯拆短，别自行规定句式' },
+    { id: 'noNumber', label: '没有真实数字', pattern: '__NO_NUMBER__', tip: '素材里若有真实数字别漏掉；没有就不要编' },
     { id: 'placeholder', label: '占位符没换掉', pattern: '__|^_+|待填|TODO|XXX', tip: '换成真实内容，别把占位带进成稿' }
   ],
 
@@ -555,11 +562,11 @@ window.WD_CONTENT = {
     C.checks.forEach(function (rule) {
       if (rule.pattern === '__LONG_PARA__') {
         var longs = bodyBlocks(body).filter(function (b) { return b.length > 90; });
-        if (longs.length) issues.push('超长段落 ' + longs.length + ' 处（>90 字）：「' + longs[0].slice(0, 24) + '…」→ 拆成一句话一段');
+        if (longs.length) issues.push('超长段落 ' + longs.length + ' 处（>90 字）：「' + longs[0].slice(0, 24) + '…」→ 按画像里的段落习惯拆短');
         return;
       }
       if (rule.pattern === '__NO_NUMBER__') {
-        if (!/\d/.test(body)) issues.push('全文没有数字 → 补一个你真实记过的数，别编');
+        if (!/\d/.test(body)) issues.push('全文没有数字 → 素材里若有真实数字别漏掉，没有就不要编');
         return;
       }
       var hits = body.match(new RegExp(rule.pattern, 'gm'));
@@ -787,8 +794,8 @@ window.WD_CONTENT = {
       h += '<div class="field"><label class="fl">' + f.label + '</label><input type="text" id="pf_' + f.k + '" value="' + esc(state.profile[f.k]) + '"></div>';
     });
     h += '<div class="btn-row"><button class="btn small" data-act="save-profile">保存画像</button><button class="btn small" data-act="reset-profile">恢复默认</button></div>';
-    h += '<div class="btn-row"><button class="btn small" data-act="paste-corpus">导入旧文，提炼画像</button><button class="btn small" data-act="paste-profile">粘贴画像 JSON</button></div>';
-    h += '<p class="hint">没旧文时先用默认画像，但那是从别人文章里抄的，成稿会带别人的味道。挑 20 篇够长的旧文提炼一次，效果差很多。</p>';
+    h += '<div class="btn-row"><button class="btn small primary" data-act="open-calibration">校准我的写法</button><button class="btn small" data-act="paste-profile">粘贴画像 JSON</button></div>';
+    h += '<p class="hint">别再用 AI 生成过的旧文「提炼风格」了 —— 那样炼出来的只是模板腔。点「校准我的写法」，从你自己的说话方式采一次：说一段真话、做一组二选一、划清边界，生成能直接粘回来的画像 JSON。</p>';
     h += '<div class="divider"></div><div class="subhead">提示词模板</div>';
     h += '<p class="hint">字段用 {{大写英文}} 占位，保存后会立即生效。</p>';
     Object.keys(C.promptLabels).forEach(function (k) {
@@ -947,9 +954,11 @@ window.WD_CONTENT = {
       case 'paste-visual':
         openPaste({ title: '粘贴配图位', note: '每行形如 [[配图: 画面描述]]，最多取 3 张，均匀插进正文。', label: '插入配图位', onSave: pasteVisual }); break;
       case 'paste-profile':
-        openPaste({ title: '粘贴风格画像 JSON', note: '字段：opening / evidence / paragraph / rhythm / ending / extra。', label: '导入画像', onSave: pasteProfile }); break;
+        openPaste({ title: '粘贴风格画像 JSON', note: '字段：opening / evidence / paragraph / rhythm / ending / extra。可用校准台生成的 JSON。', label: '导入画像', onSave: pasteProfile }); break;
+      case 'open-calibration':
+        location.href = 'style-calibration.html'; break;
       case 'paste-corpus':
-        openPaste({ title: '粘贴你的旧文', note: '挑 20 篇以上够长的旧文，直接整段粘进来。会自动拼成画像提示词并复制。', label: '生成画像提示词', onSave: pasteCorpus }); break;
+        toast('别从旧文提炼了，点「校准我的写法」重新采一次'); break;
       case 'copy-md': copy(markdown(), 'Markdown 已复制'); break;
       case 'copy-html': copy(exportHTML(), '排版 HTML 已复制，可直接粘进公众号后台'); break;
       case 'download-html': download(fullHTML(), (draft().title || '草稿').slice(0, 24) + '-' + today() + '.html', 'text/html'); toast('HTML 已下载'); break;
