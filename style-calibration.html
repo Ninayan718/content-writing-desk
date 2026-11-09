@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>我的写法 · 风格校准台</title>
+<style>
+  :root{
+    --bg:#f7f6f3; --card:#ffffff; --ink:#262521; --muted:#6d6a63;
+    --line:#e3e0d9; --brand:#2f6f5e; --brand-soft:#e9f3ef; --brand-line:#9dc6b8;
+    --warn:#a4552f; --warn-soft:#fbf0e9; --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:28px 20px 80px}
+  header.top{padding:8px 0 22px}
+  h1{font-size:24px;margin:0 0 8px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  .notice{background:var(--warn-soft);border:1px solid #f0d9c9;border-left:3px solid var(--warn);
+    border-radius:8px;padding:12px 15px;margin:18px 0 0;font-size:13.5px;color:#6f4630;line-height:1.7}
+  .steps{display:flex;gap:6px;margin:24px 0 20px;flex-wrap:wrap}
+  .step{flex:1 1 0;min-width:120px;text-align:center;padding:9px 6px;border:1px solid var(--line);
+    border-radius:8px;background:var(--card);font-size:13px;color:var(--muted);cursor:pointer;transition:.15s}
+  .step.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .step.done{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand)}
+  .panel{display:none}
+  .panel.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:20px 22px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .card h2{font-size:17px;margin:0 0 6px}
+  .card .hint{color:var(--muted);font-size:13px;margin:0 0 16px;line-height:1.7}
+  kbd{background:#f1efe9;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px}
+  textarea{width:100%;min-height:150px;padding:14px;border:1px solid var(--line);border-radius:9px;
+    font:inherit;line-height:1.8;resize:vertical;background:#fdfcfa;color:var(--ink)}
+  textarea:focus{outline:none;border-color:var(--brand-line);box-shadow:0 0 0 3px var(--brand-soft)}
+  .btn{display:inline-block;padding:9px 17px;border:1px solid var(--brand);background:var(--brand);
+    color:#fff;border-radius:8px;font:inherit;font-size:14px;cursor:pointer;transition:.15s}
+  .btn:hover{opacity:.88}
+  .btn.ghost{background:transparent;color:var(--brand)}
+  .btn.plain{background:var(--card);color:var(--ink);border-color:var(--line)}
+  .btn.small{padding:7px 13px;font-size:13px}
+  .btn-row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .link{color:var(--brand);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .q{border-top:1px solid var(--line);padding:16px 0 4px}
+  .q:first-of-type{border-top:0}
+  .q .qn{color:var(--muted);font-size:12px;letter-spacing:.5px}
+  .q .qt{margin:3px 0 11px;font-size:14px;color:#4a4740}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  @media(max-width:560px){.opts{grid-template-columns:1fr}}
+  .opt{text-align:left;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+    background:#fdfcfa;color:var(--ink);font:inherit;font-size:13.5px;line-height:1.65;cursor:pointer;transition:.15s}
+  .opt:hover{border-color:var(--brand-line)}
+  .opt.sel{background:var(--brand-soft);border-color:var(--brand);color:#1e4d40}
+  .opt .tag{display:inline-block;font-size:11px;color:var(--muted);margin-right:6px;font-weight:600}
+  .opt.sel .tag{color:var(--brand)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:#fdfcfa;
+    font-size:13px;cursor:pointer;color:var(--ink);transition:.15s}
+  .chip:hover{border-color:var(--brand-line)}
+  .chip.sel{background:var(--brand-soft);border-color:var(--brand);color:#1e4d40}
+  .chip.no.sel{background:var(--warn-soft);border-color:#d99a75;color:#8a4526}
+  input.free{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font:inherit;background:#fdfcfa}
+  .bar{height:5px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0 18px}
+  .bar i{display:block;height:100%;background:var(--brand);width:0;transition:.25s}
+  .progress{font-size:12.5px;color:var(--muted)}
+  pre.out{white-space:pre-wrap;word-break:break-word;background:#fbfaf7;border:1px solid var(--line);
+    border-radius:9px;padding:16px;font-size:13px;line-height:1.85;max-height:420px;overflow:auto}
+  .kv{display:grid;grid-template-columns:88px 1fr;gap:7px 12px;font-size:13.5px;margin:0 0 4px}
+  .kv b{color:var(--muted);font-weight:500}
+  .compare{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  .compare th,.compare td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;vertical-align:top;line-height:1.6}
+  .compare th{color:var(--muted);font-weight:500;font-size:12px}
+  .compare td.old{color:#9a968e;text-decoration:line-through;width:42%}
+  .compare td.new{color:#1e4d40}
+  .foot{color:var(--muted);font-size:12px;margin-top:22px;line-height:1.8}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:9;max-width:88vw;text-align:center}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;background:var(--brand-soft);
+    color:var(--brand);font-size:12px;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p style="margin:0 0 10px"><a href="index.html" style="color:var(--brand);font-size:13px;text-decoration:none">← 返回写作台</a></p>
+    <h1>我的写法 · 风格校准台</h1>
+    <p class="sub">旧文是 AI 写的，那就不从文章里炼了 —— 从你说话的方式重新采一次。</p>
+    <div class="notice">
+      <b>为什么重来：</b>之前那 6 条画像（💡 提炼做法、✔✖ 表格、自问自答、写在最后）是从 33 篇 AI 文里统计出来的<b>模板痕迹</b>，不是你的习惯。实测：💡 只出现在 3/33 篇、表格 4/33 篇、✔✖ 2/33 篇，而「不是X，是Y」出现 78 次、「写在最后」29/33 篇 —— 那更像 AI 的固定套路。所以这一版不读旧文，只问你本人。
+    </div>
+  </header>
+
+  <div class="steps" id="steps">
+    <div class="step on" data-go="1">1 · 说一段真话</div>
+    <div class="step" data-go="2">2 · 语感二选一</div>
+    <div class="step" data-go="3">3 · 划边界</div>
+    <div class="step" data-go="4">4 · 生成《我的写法》</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <section class="panel on" id="p1">
+    <div class="card">
+      <h2>像发微信那样，讲一件最近的小事</h2>
+      <p class="hint">别当写文章。不用分点、不用润色、不用成语，想到哪写到哪就行。100～300 字，比如复胖这件事、今天做了什么、一件让你有点在意的事。<b>这段才是第一份真正属于你的语料。</b></p>
+      <textarea id="sample" placeholder="例：早上称了下，114.5。有点懵，7月底明明才105……这三个月奶茶没断过，也没怎么动。算了，先这样吧。"></textarea>
+      <div class="btn-row">
+        <button class="btn" data-act="save-sample">保存这一段</button>
+        <span class="link" data-go="2">暂时不想写，直接做选择题 →</span>
+      </div>
+      <p class="foot" id="sampleStat"></p>
+    </div>
+    <div class="card">
+      <h2>这一段会被怎么用</h2>
+      <p class="hint" style="margin:0">只做三件事：量你的平均句长、看你用不用问句、数几个口头禅（但 / 就 / 其实 / 结果 / 以前…现在…）。不会拿它去"提炼文笔"，也不会改动你的字。结果会写进第 4 步的规格里当例句。</p>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" id="p2">
+    <div class="card">
+      <h2>哪一句更像「我会说的话」<span class="pill" id="qcount"></span></h2>
+      <p class="hint">没有正确答案，也别猜哪边是 AI 写的 —— 只看哪句顺你的嘴。左边多取自旧文里的高频写法，右边是更朴素的写法，但两边都有可能是你。随时可改。</p>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="progress" id="progress"></div>
+      <div id="qlist"></div>
+      <div class="btn-row">
+        <button class="btn ghost" data-go="1">← 上一步</button>
+        <button class="btn" data-go="3">下一步：划边界 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" id="p3">
+    <div class="card">
+      <h2>我绝不这么写</h2>
+      <p class="hint">点掉那些一看就不是你的东西。这些会变成硬约束，优先级高于任何"风格建议"。</p>
+      <div class="chips" id="noChips"></div>
+    </div>
+    <div class="card">
+      <h2>我一定会这么写</h2>
+      <p class="hint">点掉你认的。</p>
+      <div class="chips" id="yesChips"></div>
+    </div>
+    <div class="card">
+      <h2>用你自己的话补一条</h2>
+      <p class="hint">上面都没有的那条，往往最要紧。比如「我不写感悟，只写发生了什么」。</p>
+      <input class="free" id="own" placeholder="我……">
+      <div class="btn-row">
+        <button class="btn ghost" data-go="2">← 上一步</button>
+        <button class="btn" data-go="4">下一步：生成 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="panel" id="p4">
+    <div class="card">
+      <h2>《我的写法》</h2>
+      <p class="hint">把上面三步拼成一份规格。它比旧版长，因为带了「不要做什么」和例句 —— 提示词里真正管用的是这部分。</p>
+      <div class="btn-row" style="margin-top:0;margin-bottom:14px">
+        <button class="btn" data-act="gen">生成规格</button>
+        <button class="btn plain small" data-act="copy-json">复制工作台画像 JSON</button>
+        <button class="btn plain small" data-act="copy-md">复制全文</button>
+        <button class="btn plain small" data-act="dl">下载 .md</button>
+      </div>
+      <pre class="out" id="out">还没生成。点上面「生成规格」。</pre>
+    </div>
+    <div class="card">
+      <h2>跟旧画像差在哪</h2>
+      <p class="hint">旧版是从 AI 文里统计出来的模板，新版是从你这儿采的。</p>
+      <table class="compare"><thead><tr><th>字段</th><th>旧（作废）</th><th>新</th></tr></thead><tbody id="cmp"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>接下来怎么用</h2>
+      <p class="hint" style="margin:0">
+        ① 点「复制工作台画像 JSON」→ 打开写作台 → 设置 → 粘贴画像 JSON → 导入，旧的 6 条会被覆盖。<br>
+        ② 「复制全文」可以贴进写作台的初稿提示词模板，或直接发给 AI 当写法约束。<br>
+        ③ 想验证像不像：拿同一条素材各写一版，只改风格约束，对比着看。<br>
+        ④ 过一阵子觉得还不像，回来改几道选择题重新生成就行，答案会自动存着。
+      </p>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" data-go="3">← 上一步</button>
+      <span class="link" data-act="reset">清空重来</span>
+    </div>
+  </section>
+
+  <p class="foot" id="saveHint"></p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var KEY='myStyle.v1';
+
+  // dim: opening / evidence / paragraph / rhythm / ending / extra
+  var Q=[
+    {d:'opening',q:'怎么开口',a:{t:'114.5斤。\n这是3个月后的我。',v:'别用「报一个数字 + 停顿」的文学化开场，不摆悬念'},b:{t:'早上称重，114.5。',v:'从一个具体动作、时间或场景平实起句，不铺垫'}},
+    {d:'evidence',q:'怎么交代背景',a:{t:'今年4月，我开始减肥。到7月底，从121斤减到105斤。',v:'一句一个事实，日期和数字摆整齐'},b:{t:'今年4月开始减的，7月底到了105斤，从121斤下来的。',v:'用说话的语序顺带带出日期和数字，不写成书面陈述句'}},
+    {d:'evidence',q:'数字怎么用',a:{t:'比105斤，胖了快10斤。',v:'用素材里的原数字做前后对照，不四舍五入、不算新数'},b:{t:'胖了快10斤。',v:'只留最关键的一个数字，不做前后对照'}},
+    {d:'rhythm',q:'怎么承认一件事',a:{t:'这次复胖让我明白，减肥减下来不是终点，怎么维稳才是。',v:'别一上来就替我下结论，把领悟往后放'},b:{t:'我以前以为减到105斤就完事了。现在看，没完。',v:'用「以前…现在…」写认知变化，不写总结句'}},
+    {d:'rhythm',q:'转折怎么说',a:{t:'不是减不动，是觉得「完成了」。',v:'少用「不是X，是Y」的对仗句（旧文里 78 次，模板味最重）'},b:{t:'减得动，就是不想减了。',v:'用口语转折（但／就／结果），不刻意对仗'}},
+    {d:'rhythm',q:'要不要解释原因',a:{t:'不是体重反弹，是我先松了手。',v:'别替我解释因果，别把行为翻译成道理'},b:{t:'也没什么特别的原因，就是没管了。',v:'只说发生了什么，原因留白，不升华'}},
+    {d:'rhythm',q:'要不要反问',a:{t:'明明已经减下来了，怎么又回去了？',v:'少用自问自答推进，别自己抛问题自己答'},b:{t:'（不反问，直接往下说）',v:'顺着往下说，不靠自问自答撑节奏'}},
+    {d:'extra',q:'情绪怎么写',a:{t:'这次复胖，我没太怪自己。',v:'别替我安排情绪和姿态（「没怪自己」「放过自己」这类）'},b:{t:'有点烦，但也没到难受。',v:'情绪用大白话，轻描淡写，不写成成长感悟'}},
+    {d:'extra',q:'要不要教读者做事',a:{t:'💡 给自己定目标时，多问一句：到了之后，靠什么留住它。',v:'不写 💡 金句块，不给读者开药方'},b:{t:'（不写建议，就写到自己身上为止）',v:'只写自己的事，不教别人怎么做'}},
+    {d:'extra',q:'口头禅留不留',a:{t:'其实／但／就／结果／以前…现在…，照常用',v:'保留口头禅（但、就、其实、结果），句子短，允许不规整'},b:{t:'尽量少用这些，写干净点',v:'少用虚词，句子写干净、书面一点'}},
+    {d:'paragraph',q:'段落多长',a:{t:'一句话一段，段间空行',v:'一句话一段，段间空行'},b:{t:'想到哪写到哪，一段三四句也行',v:'段落跟着语气走，不强行一句话一段'}},
+    {d:'paragraph',q:'分不分小标题',a:{t:'用 ### 先说背景／这3个月…／写在最后',v:'不分小标题，一路写下来（旧文 88% 有「写在最后」，是模板痕迹）'},b:{t:'不分小标题，一路写下来',v:'顺着事情本身分段，不套固定栏目'}},
+    {d:'paragraph',q:'用不用表格清单',a:{t:'用表格列 ✔✖ 前后对照',v:'不用表格、✔✖ 和清单，那是复盘模板不是我的写法'},b:{t:'不列表，直接说',v:'用句子说，不用表格、勾叉或项目符号'}},
+    {d:'ending',q:'怎么收尾',a:{t:'是把「维持」也当成一件要一直做的事，慢慢来。',v:'结尾别升华、别上道理、别「慢慢来」'},b:{t:'下周再称一次看看。',v:'结尾停在一件具体的小事或下一步动作上'}},
+    {d:'ending',q:'要不要固定收尾栏目',a:{t:'加一个「写在最后」小节',v:'不用「写在最后」这类固定收尾栏目'},b:{t:'自然停住，不加栏目',v:'自然收束，不加栏目名，不喊口号'}}
+  ];
+
+  var NO=['💡 金句块','✔✖ 表格','「写在最后」栏目','首先／其次／最后','综上所述、以下是','喊口号','编造数字','替我抒情','替我下结论','教读者做事','对仗句「不是X，是Y」','书面大词（赋能、底层逻辑…）','刻意升华'];
+  var YES=['真实日期和原数字','大白话','短句','只写发生的事','留白，不解释','结尾停在具体动作','想到哪写到哪','不修饰、不润色','允许句子不完整'];
+
+  var OLD={
+    opening:'口语化开场，先说背景，不铺垫大词',
+    evidence:'爱晒真实数据，只用我给的数字',
+    paragraph:'一句话一段，段落短，段间空一行',
+    rhythm:'自问自答推进，不堆小标题',
+    ending:'结尾自然收束，不喊口号',
+    extra:'不用「首先/其次/最后」，不写「综上所述」，不编造经历和数据，不用「以下是」'
+  };
+  var LEGACY={
+    opening:'从具体场景或回顾切入，可抛提问拉共鸣',
+    evidence:'用真实日期花费和前后对比数字，零编造',
+    paragraph:'中等短段，用---分节、###小标题、列表表格',
+    rhythm:'自问自答推进，用💡把感悟提炼成做法',
+    ending:'自然收束，温和升华，常用写在最后收尾',
+    extra:'不用首先其次最后/以下是；不编造；善用✔✖表格'
+  };
+  var LABEL={opening:'开场',evidence:'论据',paragraph:'段落',rhythm:'节奏',ending:'结尾',extra:'禁忌'};
+  var ORDER=['opening','evidence','paragraph','rhythm','ending','extra'];
+
+  var state={sample:'',picks:{},no:{},yes:{},own:'',step:1};
+  try{ var s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&typeof s==='object'){
+    state.sample=s.sample||'';state.picks=s.picks||{};state.no=s.no||{};state.yes=s.yes||{};state.own=s.own||'';
+  }}catch(e){}
+
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+    document.getElementById('saveHint').textContent='答案自动存在这台设备的浏览器里，关掉页面也不会丢。';}
+  function $(id){return document.getElementById(id)}
+  function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._x);t._x=setTimeout(function(){t.classList.remove('on')},2200)}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+  function go(n){
+    state.step=n;
+    [1,2,3,4].forEach(function(i){ $('p'+i).classList.toggle('on',i===n); });
+    var st=document.querySelectorAll('.step');
+    st.forEach(function(el,i){ el.classList.toggle('on',i+1===n); el.classList.toggle('done',i+1<n); });
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(n===4) build();
+  }
+
+  // ---- render questions ----
+  var qlist=$('qlist');
+  Q.forEach(function(item,i){
+    var d=document.createElement('div');d.className='q';
+    d.innerHTML='<div class="qn">'+String(i+1).padStart(2,'0')+' · '+esc(LABEL[item.d])+'</div>'+
+      '<div class="qt">'+esc(item.q)+'</div>'+
+      '<div class="opts">'+
+        '<button class="opt" data-i="'+i+'" data-k="a"><span class="tag">A</span>'+esc(item.a.t).replace(/\n/g,'<br>')+'</button>'+
+        '<button class="opt" data-i="'+i+'" data-k="b"><span class="tag">B</span>'+esc(item.b.t).replace(/\n/g,'<br>')+'</button>'+
+      '</div>';
+    qlist.appendChild(d);
+  });
+  function paintQ(){
+    var n=0;
+    document.querySelectorAll('.opt').forEach(function(b){
+      var i=b.dataset.i,k=b.dataset.k;
+      var on=state.picks[i]===k;b.classList.toggle('sel',on);
+    });
+    Object.keys(state.picks).forEach(function(k){if(state.picks[k])n++});
+    $('qcount').textContent=n+' / '+Q.length;
+    $('bar').style.width=(n/Q.length*100)+'%';
+    $('progress').textContent=n===0?'一道都还没选，随便点几题也行':(n<Q.length?'还剩 '+(Q.length-n)+' 题，没想好的可以跳过':'全部答完了，可以直接进下一步');
+  }
+  qlist.addEventListener('click',function(e){
+    var b=e.target.closest('.opt'); if(!b)return;
+    state.picks[b.dataset.i]=b.dataset.k;save();paintQ();
+  });
+
+  // ---- chips ----
+  function chips(host,arr,kind){
+    arr.forEach(function(t){
+      var c=document.createElement('button');
+      c.className='chip'+(kind==='no'?' no':'');c.textContent=t;c.dataset.t=t;c.dataset.kind=kind;
+      host.appendChild(c);
+    });
+  }
+  chips($('noChips'),NO,'no');chips($('yesChips'),YES,'yes');
+  function paintChips(){
+    document.querySelectorAll('.chip').forEach(function(c){
+      c.classList.toggle('sel',!!state[c.dataset.kind][c.dataset.t]);
+    });
+  }
+  document.body.addEventListener('click',function(e){
+    var c=e.target.closest('.chip'); if(!c)return;
+    var k=c.dataset.kind,t=c.dataset.t;
+    if(state[k][t])delete state[k][t];else state[k][t]=1;
+    save();paintChips();
+  });
+
+  // ---- sample stats ----
+  function sampleStats(){
+    if(!state.sample.trim()){$('sampleStat').textContent='';return null}
+    var t=state.sample.replace(/\s+/g,'');
+    var ss=state.sample.split(/[。！？!?\n]+/).filter(function(x){return x.trim().length>1});
+    var avg=Math.round(t.length/Math.max(ss.length,1));
+    var qs=(state.sample.match(/[？?]/g)||[]).length;
+    var words=['但','就','其实','结果','以前','现在','不是','而是','然后','算了','好像'];
+    var hit=words.filter(function(w){return state.sample.indexOf(w)>=0});
+    var o={len:t.length,sents:ss.length,avg:avg,qs:qs,hit:hit};
+    $('sampleStat').textContent='你这段：'+o.len+' 字，'+o.sents+' 句，平均 '+o.avg+' 字/句，问句 '+o.qs+' 个'+(hit.length?'；用到的口头禅：'+hit.join('、'):'；没用到常见口头禅')+'。';
+    return o;
+  }
+
+  // ---- build ----
+  function collect(){
+    var g={};ORDER.forEach(function(k){g[k]=[]});
+    Q.forEach(function(item,i){
+      var k=state.picks[i]; if(!k)return;
+      g[item.d].push(item[k].v);
+    });
+    ORDER.forEach(function(k){
+      if(k==='extra'){
+        Object.keys(state.no).forEach(function(t){g.extra.push('不写：'+t)});
+      }
+    });
+    return g;
+  }
+  function fieldOf(k,g){
+    var v=g[k].slice();
+    if(k==='extra'&&state.own.trim())v.push(state.own.trim());
+    return v.length?v.join('；'):'（这一项还没选，按你自己的习惯来）';
+  }
+  function build(){
+    var g=collect(),st=sampleStats();
+    var lines=[];
+    lines.push('《我的写法》');
+    lines.push('（从本人语感采集，不从旧文提炼；旧文为 AI 生成，不作参照）');
+    lines.push('');
+    ORDER.forEach(function(k,i){
+      lines.push(['一','二','三','四','五','六'][i]+'、'+LABEL[k]);
+      lines.push('  '+fieldOf(k,g));
+      lines.push('');
+    });
+    lines.push('七、我一定会这么写');
+    var ys=Object.keys(state.yes);
+    lines.push('  '+(ys.length?ys.join('；'):'（未选）'));
+    lines.push('');
+    if(state.own.trim()){lines.push('八、我自己补的一条');lines.push('  '+state.own.trim());lines.push('')}
+    if(st){
+      lines.push('九、语料取样（本人即时口语，不是文章）');
+      lines.push('  '+st.len+' 字 / '+st.sents+' 句 / 平均 '+st.avg+' 字一句 / 问句 '+st.qs+' 个');
+      if(st.hit.length)lines.push('  口头禅：'+st.hit.join('、'));
+      lines.push('  写初稿时以这个句子长度为基准，不要自动变长、不要替我润色。');
+      lines.push('');
+    }
+    lines.push('【硬约束 · 优先级高于以上任何一条】');
+    lines.push('  只用我给的真实素材。不许编造任何数字、日期、经历、案例、心理活动和场景。');
+    lines.push('  不替我抒情、不替我下结论、不替我安排情绪。');
+    lines.push('  不确定就留白，不要补。');
+    $('out').textContent=lines.join('\n');
+    buildCompare(g);
+  }
+  function buildCompare(g){
+    var tb=$('cmp');tb.innerHTML='';
+    ORDER.forEach(function(k){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td><b>'+esc(LABEL[k])+'</b></td><td class="old">'+esc(LEGACY[k])+'</td><td class="new">'+esc(fieldOf(k,g))+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+  function jsonOf(g){
+    var o={};ORDER.forEach(function(k){o[k]=fieldOf(k,g)});
+    o._note='本人语感校准生成；旧版 style-profile.json 已作废（提炼自 AI 文）';
+    return JSON.stringify(o,null,2);
+  }
+  function copy(text,msg){
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){toast(msg)},function(){fallback(text,msg)});
+    }else fallback(text,msg);
+  }
+  function fallback(text,msg){
+    var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast(msg)}catch(e){toast('复制失败，请手动选中文本')}
+    document.body.removeChild(ta);
+  }
+  function download(){
+    var blob=new Blob([$('out').textContent],{type:'text/markdown;charset=utf-8'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='我的写法.md';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href)},1000);toast('已下载 我的写法.md');
+  }
+
+  // ---- events ----
+  document.body.addEventListener('click',function(e){
+    var g=e.target.closest('[data-go]');if(g){go(+g.dataset.go);return}
+    var a=e.target.closest('[data-act]');if(!a)return;
+    switch(a.dataset.act){
+      case 'save-sample': state.sample=$('sample').value;save();sampleStats();toast('这段存好了');break;
+      case 'gen': build();toast('已生成');break;
+      case 'copy-json': build();copy(jsonOf(collect()),'画像 JSON 已复制，去写作台粘贴导入');break;
+      case 'copy-md': build();copy($('out').textContent,'《我的写法》已复制');break;
+      case 'dl': build();download();break;
+      case 'reset':
+        if(confirm('清空所有答案重来？')){
+          state={sample:'',picks:{},no:{},yes:{},own:'',step:1};
+          try{localStorage.removeItem(KEY)}catch(e){}
+          $('sample').value='';$('own').value='';$('out').textContent='还没生成。点上面「生成规格」。';
+          paintQ();paintChips();sampleStats();go(1);toast('已清空');
+        }
+        break;
+    }
+  });
+  $('sample').addEventListener('input',function(){state.sample=this.value;save();sampleStats()});
+  $('own').addEventListener('input',function(){state.own=this.value;save()});
+
+  // init
+  $('sample').value=state.sample;$('own').value=state.own;
+  paintQ();paintChips();sampleStats();go(1);save();
+})();
+</script>
+</body>
+</html>
