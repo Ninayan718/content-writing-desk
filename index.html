@@ -236,17 +236,18 @@ details.tpl textarea{margin-top:8px;min-height:130px;font-size:12px;font-family:
 <script>
 window.WD_CONTENT = {
   storageKey: 'writingDesk.v1',
+  // 写法版本：升级时把画像 / 初稿模板 / 终审规则同步给已有浏览器数据，但不碰草稿素材
+  styleVersion: 2,
 
-  // 旧版默认画像（以及后来从 33 篇 AI 文里提炼出的画像）都已作废：
-  // 那是从 AI 生成的文本里统计出来的模板痕迹，不是作者本人的写法。
-  // 这里只留「去 AI 味的底线」，并明确标注未校准，引导去校准台采集本人语感。
+  // 作者本人交付的《个人IP专属智囊与写作分身（生活流纪实与觉察风格）》，
+  // 拆成 6 个可编辑字段。这一版取代此前所有画像（含从 AI 旧文提炼的、校准台朴素版的）。
   defaultProfile: {
-    opening: '（未校准）从一个具体场景平实起句，不铺垫',
-    evidence: '（未校准）只用我给的真实数字和经历，零编造',
-    paragraph: '（未校准）短段，按语气自然分段',
-    rhythm: '（未校准）顺着事情往下说，不套模板、不自问自答',
-    ending: '（未校准）停在一件具体的事上，不升华',
-    extra: '（未校准）不替我抒情、不替我下结论；不用💡、表格、小标题；不确定就留白'
+    opening: '从一个具体时间点、一杯咖啡、深夜亮着的屏幕这类烟火气场景直接切入；绝不以大道理开篇',
+    evidence: '零滤镜坦诚：敢写自己的不完美、焦虑、失控和狼狈（熬夜、冲动消费、三分钟热度、想偷懒）；只用真实经历，不美化、不编造',
+    paragraph: '句式短促，自然换行，像呼吸一样流畅；拒绝长篇大论的压迫感',
+    rhythm: '边做边想：展示卡壳、纠结、心理拉扯，不直接给标准答案；带自然口癖（其实／我想着……／说实话）',
+    ending: '温柔地放过自己，给一个接地气的小解法或金句；不打鸡血、不喊口号',
+    extra: '禁用：总而言之、不可否认、值得一提的是、在快节奏的当下、赋能／闭环／底层逻辑；严禁盲目乐观、严禁劝读者咬牙坚持；绝不高高在上，绝无 AI 腔和公文套话；零编造'
   },
 
   steps: [
@@ -284,16 +285,41 @@ window.WD_CONTENT = {
     ].join('\n'),
 
     draft: [
-      '我是公众号作者，领域是 {{DOMAIN}}。请按以下约束写初稿。',
+      '# Role: 个人IP专属智囊与写作分身（生活流纪实与觉察风格）',
       '',
-      '【风格画像】{{PROFILE}}',
-      '【素材】只能用我给的真实经历：{{MATERIALS}}。禁止编造数据、案例和经历。',
-      '【框架】严格按这些要点展开，不新增章节：',
-      '{{FRAMEWORK}}',
+      '## Personas & Tone',
+      '你现在是【创作者本人】的写作分身。你的文字永远像在深夜的微信对话框里，向懂你的朋友吐露最真实的生活流碎碎念。绝无高高在上的导师姿态，绝无「AI味」和假大空的公文套话。',
+      '领域：{{DOMAIN}}',
+      '',
+      '## Core Style Rules（风格DNA）',
+      '1. 拒绝完美人设，拥抱「零滤镜坦诚」：必须敢于暴露自己的不完美、焦虑、失控和狼狈（熬夜刷短剧到凌晨、冲动消费、三分钟热度、想偷懒等）。用真实的「心理拉扯」代替虚假的成功学。',
+      '2. 微观生活流切入：文章绝不以大道理开篇，必须从具体的、有烟火气的场景切入（一个具体的时间点、一杯咖啡、深夜亮着的屏幕、一件生活琐事）。',
+      '3. 动态思考与自我解构：行文要展现「边做边想」的过程。不直接给标准答案，而是展示自己是怎么在这个过程中卡壳、纠结、然后突然冒出一个小通透的。',
+      '4. 语言节奏与口癖规范：句式短促、自然换行，像呼吸一样流畅，拒绝长篇大论的压迫感；带有自然的口语化表达（「其实」「我想着……」「说实话」）。',
+      '5. 自愈与反思收尾：结尾不打鸡血，而是给出一种温柔的、放过自己的、接地气的解法或金句（例如「多坚持几个三分钟也好」「不用管那么多，直接做了再说」）。',
+      '',
+      '## Negative Constraints（绝对禁用）',
+      '严禁 AI 腔词汇：「总而言之」「不可否认」「值得一提的是」「在快节奏的当下」「赋能、闭环、底层逻辑」；除非特殊语境，否则少用生硬互联网黑话。',
+      '严禁盲目乐观、严禁劝读者盲目咬牙坚持。',
+      '严禁编造：只能用下面给的真实经历，不新增数据、案例、经历和没有发生过的场景。',
+      '',
+      '## 风格画像（作者本人校准，按此执行）',
+      '{{PROFILE}}',
+      '',
+      '## 本篇信息',
       '【选题】{{TOPIC}}',
+      '【真实经历素材】{{MATERIALS}}',
+      '【框架要点】这些要点必须被写到，但用上面的生活流方式组织，不新增与素材无关的内容：',
+      '{{FRAMEWORK}}',
       '',
-      '【输出】只给正文，不要解释、不要总结、不要写「以下是」。',
-      '段落长短、分节、是否用小标题，一律按上面的风格画像来，不要自行套模板。',
+      '## Output Structure（这是行文结构，不要在正文里写出这些小标题）',
+      '【Hook 开篇】用具体的时间／生活场景／当下的一个小困扰直接切入。',
+      '【正文拉扯】展开最近在做什么与内心的矛盾、失控，边做边想。',
+      '【觉察升华】从狼狈或折腾中突然冒出的一个小清醒，温柔收尾。',
+      '',
+      '## 输出契约',
+      '只给正文，不要解释、不要总结、不要写「以下是」，不要输出任何小标题、结构标签或分节编号。',
+      '段落长短、分节一律按风格画像来，不自行套模板。',
       '需要配图的地方单独写一行 [[配图: 画面描述]]；画像里若不要配图，就不写。'
     ].join('\n'),
 
@@ -308,6 +334,7 @@ window.WD_CONTENT = {
 
     review: [
       '你是我的终审编辑。按下面的风格画像审这篇稿子。',
+      '重点查：有没有导师姿态、盲目乐观、打鸡血、劝读者咬牙坚持；有没有 AI 腔套话（总而言之、不可否认、值得一提的是、在快节奏的当下、赋能、闭环、底层逻辑）；有没有编造的经历或数字；是不是缺了具体生活场景和心理拉扯。',
       '只输出问题清单，一行一条，每条给出原句和建议改法；不要重写全文，不要夸奖，没有问题就写「无明显问题」。',
       '',
       '【风格画像】{{PROFILE}}',
@@ -325,8 +352,8 @@ window.WD_CONTENT = {
   },
 
   checks: [
-    { id: 'slogan', label: '口号 / 套话', pattern: '综上所述|总而言之|首先|其次|最后|在这个.{0,6}时代|赋能|抓手|让我们一起|值得一提的是|不难看出', tip: '删掉，换成具体的说法' },
-    { id: 'aiTone', label: 'AI 味开场', pattern: '以下是|希望对你有帮助|总结一下|总的来说|值得注意的是|在当今', tip: '直接删，正文应该自己开场' },
+    { id: 'slogan', label: '口号 / AI 腔套话', pattern: '综上所述|总而言之|不可否认|值得一提的是|不难看出|首先|其次|最后|在这个.{0,6}时代|在快节奏的当下|赋能|闭环|底层逻辑|抓手|让我们一起', tip: '删掉，换成具体的生活流说法' },
+    { id: 'aiTone', label: 'AI 味开场 / 打鸡血', pattern: '以下是|希望对你有帮助|总结一下|总的来说|值得注意的是|在当今|只要坚持|咬牙坚持|一定可以|你也能|加油', tip: '直接删；不打鸡血、不劝读者咬牙坚持，正文自己开场' },
     { id: 'longPara', label: '超长段落', pattern: '__LONG_PARA__', tip: '按画像里的段落习惯拆短，别自行规定句式' },
     { id: 'noNumber', label: '没有真实数字', pattern: '__NO_NUMBER__', tip: '素材里若有真实数字别漏掉；没有就不要编' },
     { id: 'placeholder', label: '占位符没换掉', pattern: '__|^_+|待填|TODO|XXX', tip: '换成真实内容，别把占位带进成稿' }
@@ -411,7 +438,7 @@ window.WD_CONTENT = {
     d.body = C.seedBody;
     return {
       v: 1,
-      domain: '个人成长 / 一人公司 / AI 实践',
+      domain: '个人成长',
       materials: C.seedMaterials.map(function (x) { return Object.assign({}, x); }),
       topics: C.seedTopics.map(function (x) { return Object.assign({}, x); }),
       drafts: [d],
@@ -420,6 +447,7 @@ window.WD_CONTENT = {
       templates: Object.assign({}, C.promptTemplates),
       settings: { apiBase: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini', useApi: false },
       draftsOpen: false,
+      styleVersion: C.styleVersion,
       tab: 'write'
     };
   }
@@ -431,6 +459,8 @@ window.WD_CONTENT = {
       if (!raw) return d;
       var s = JSON.parse(raw);
       if (!s || typeof s !== 'object') return d;
+      // 必须在补齐默认值之前读旧版本号，否则 styleVersion 会被补成最新值导致迁移不触发
+      var priorStyleVersion = s.styleVersion || 1;
       Object.keys(d).forEach(function (k) { if (s[k] === undefined || s[k] === null) s[k] = d[k]; });
       PF_FIELDS.forEach(function (f) { if (s.profile[f.k] === undefined) s.profile[f.k] = d.profile[f.k]; });
       Object.keys(C.promptTemplates).forEach(function (k) { if (!s.templates[k]) s.templates[k] = C.promptTemplates[k]; });
@@ -446,6 +476,15 @@ window.WD_CONTENT = {
         if (!x.createdAt) x.createdAt = x.updatedAt || Date.now();
       });
       delete s.pipeline;
+      // 写法升级：只覆盖风格画像与初稿模板，草稿 / 素材 / 选题 / 其他自定义模板一律保留
+      if (priorStyleVersion < C.styleVersion) {
+        s.profile = Object.assign({}, C.defaultProfile);
+        if (!s.templates) s.templates = {};
+        s.templates.draft = C.promptTemplates.draft;
+        s.styleVersion = C.styleVersion;
+        s.styleUpdated = true;
+      }
+      if (!s.styleVersion) s.styleVersion = C.styleVersion;
       if (TABS.indexOf(s.tab) < 0) s.tab = 'write';
       return s;
     } catch (e) { return d; }
@@ -908,13 +947,13 @@ window.WD_CONTENT = {
     var h = '';
     h += '<div class="field"><label class="fl">你的领域（写进提示词）</label><input type="text" id="setDomain" value="' + esc(state.domain) + '"></div>';
     h += '<button class="btn small" data-act="save-domain">保存领域</button>';
-    h += '<div class="subhead">风格画像</div>';
+    h += '<div class="subhead">风格画像 <span class="tag you">生活流纪实 · 觉察风格</span></div>';
     PF_FIELDS.forEach(function (f) {
-      h += '<div class="field"><label class="fl">' + f.label + '</label><input type="text" id="pf_' + f.k + '" value="' + esc(state.profile[f.k]) + '"></div>';
+      h += '<div class="field"><label class="fl">' + f.label + '</label><textarea id="pf_' + f.k + '" rows="2">' + esc(state.profile[f.k]) + '</textarea></div>';
     });
-    h += '<div class="btn-row"><button class="btn small" data-act="save-profile">保存画像</button><button class="btn small" data-act="reset-profile">恢复默认</button></div>';
-    h += '<div class="btn-row"><button class="btn small primary" data-act="open-calibration">校准我的写法</button><button class="btn small" data-act="paste-profile">粘贴画像 JSON</button></div>';
-    h += '<p class="hint">别再用 AI 生成过的旧文「提炼风格」了 —— 那样炼出来的只是模板腔。点「校准我的写法」，从你自己的说话方式采一次：说一段真话、做一组二选一、划清边界，生成能直接粘回来的画像 JSON。</p>';
+    h += '<div class="btn-row"><button class="btn small" data-act="save-profile">保存画像</button><button class="btn small" data-act="reset-profile">恢复默认</button><button class="btn small" data-act="restore-style">恢复这份写法（含初稿模板）</button></div>';
+    h += '<div class="btn-row"><button class="btn small" data-act="open-calibration">校准我的写法</button><button class="btn small" data-act="paste-profile">粘贴画像 JSON</button></div>';
+    h += '<p class="hint">当前用的是你交付的《个人IP专属智囊与写作分身》：深夜微信对话框式的零滤镜坦诚、微观生活流切入、边做边想、温柔收尾。初稿模板里是完整版本，这里 6 条是可微调的要点。手动改乱了点「恢复这份写法」即可复原。注意：校准台会按另一套口径覆盖画像，想保留这份就别再点「校准我的写法」。</p>';
     h += '<div class="divider"></div><div class="subhead">提示词模板</div>';
     h += '<p class="hint">字段用 {{大写英文}} 占位，保存后会立即生效。</p>';
     Object.keys(C.promptLabels).forEach(function (k) {
@@ -1122,6 +1161,11 @@ window.WD_CONTENT = {
       case 'reset-profile':
         state.profile = Object.assign({}, C.defaultProfile);
         save(); renderMore(); toast('已恢复默认画像'); break;
+      case 'restore-style':
+        state.profile = Object.assign({}, C.defaultProfile);
+        state.templates.draft = C.promptTemplates.draft;
+        state.styleVersion = C.styleVersion;
+        save(); renderMore(); toast('画像和初稿模板已恢复为生活流纪实写法'); break;
       case 'save-templates':
         $$('[data-tpl]').forEach(function (ta) { state.templates[ta.getAttribute('data-tpl')] = ta.value; });
         save(); toast('提示词模板已保存'); break;
@@ -1208,8 +1252,11 @@ window.WD_CONTENT = {
 
   var initialTab = tabFromHash();
   if (initialTab) state.tab = initialTab;
+  var justUpdated = !!state.styleUpdated;
+  delete state.styleUpdated;
   save();
   renderAll();
+  if (justUpdated) setTimeout(function () { toast('写法已更新为「生活流纪实与觉察风格」，草稿和素材都保留着'); }, 400);
   window.__WD = {
     getState: function () { return state; },
     go: go,
