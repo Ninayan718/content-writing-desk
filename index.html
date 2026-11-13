@@ -65,6 +65,7 @@ label.fl{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
 .list-title{font-size:13.5px;font-weight:500;word-break:break-word}
 .list-detail{font-size:12px;color:var(--muted);margin-top:3px;word-break:break-word;line-height:1.6}
 .list-side{display:flex;gap:6px;flex:none;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:110px}
+.tdate{display:inline-block;font-size:11px;font-weight:400;color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:0 6px;margin-right:7px;white-space:nowrap}
 .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 5px;white-space:nowrap}
 .tag.you{background:var(--accent-soft);color:var(--accent);border-color:transparent}
 .tag.idea{background:#F3EFE8;color:var(--muted);border-color:transparent}
@@ -343,7 +344,14 @@ window.WD_CONTENT = {
 
     visual: [
       '为下面这篇公众号文章设计 3 张配图，每行一张，格式严格为 [[配图: 画面描述]]。',
-      '风格：干净、扁平、无文字、适合手机竖屏。不要人物特写，不要水印，不要品牌标识。',
+      '风格：干净、扁平插画、暖浅色调、大面积留白、柔和自然光；无文字、无字母数字、无水印、无品牌标识；不要人物特写。',
+      '',
+      '【尺寸要求 · 每张都必须写进画面描述】',
+      '竖版 3:4，建议 1080 × 1440 px（公众号正文配图，手机竖屏阅读）；三张尺寸保持一致。',
+      '主体居中偏上，四周留安全边距，重要元素不贴边、不被裁切；缩略图里也要看得清主体。',
+      '每条画面描述末尾统一附「扁平插画，无文字，竖版 3:4，1080 × 1440 px」。',
+      '（尺寸为排版经验参考值，平台图片规格以微信公众平台官方最新说明为准。）',
+      '',
       '只输出这三行，不要解释。',
       '',
       '文章内容：',
@@ -406,6 +414,16 @@ window.WD_CONTENT = {
     { id: 'placeholder', label: '占位符没换掉', pattern: '__|^_+|待填|TODO|XXX', tip: '换成真实内容，别把占位带进成稿' }
   ],
 
+  // 旧版配图模板全文：只在这个精确版本上整体替换，用户自定义过的模板不覆盖
+  legacyVisual: [
+    '为下面这篇公众号文章设计 3 张配图，每行一张，格式严格为 [[配图: 画面描述]]。',
+    '风格：干净、扁平、无文字、适合手机竖屏。不要人物特写，不要水印，不要品牌标识。',
+    '只输出这三行，不要解释。',
+    '',
+    '文章内容：',
+    '{{BODY}}'
+  ].join('\n'),
+
   seedMaterials: [
     { id: 'm1', title: '小程序开发复盘', detail: '示例：上线 30 天，日活 __，流量主收入 __ 元。把 __ 换成你的真实数字。', tag: '产品', picked: false },
     { id: 'm2', title: '流量主日报', detail: '示例：连续记录 45 天，最高单日 __ 元。只写你真实记过的数。', tag: '数据', picked: false },
@@ -413,10 +431,24 @@ window.WD_CONTENT = {
     { id: 'm4', title: '一人公司实践', detail: '示例：没有雇员，外包只花过 __ 元，最卡的一步是 __。', tag: '工作', picked: false }
   ],
 
+  // 2026-11-13 导入的真实选题包：8 篇已排期 + 6 条首篇备选标题
+  // date 存 ISO，选题页自动换算成「11/14 周六」并按日期排序；date 为空的是备选标题，不排期
+  topicPackVersion: 1,
   seedTopics: [
-    { id: 't1', title: '把旧文搬到博客后，我想通了什么', status: 'idea' },
-    { id: 't2', title: '我为什么不追热点了', status: 'idea' },
-    { id: 't3', title: '一个人做产品，第 30 天的数据', status: 'idea' }
+    { id: 'tp1', title: '做啥都坚持不下去，这件事我认了', status: 'doing', date: '2026-11-14', note: '又没做到 · 首篇已成稿、封面已出；发布后 3–7 天复盘' },
+    { id: 'tp2', title: '刷短剧到凌晨 4 点，手一直在向下滑', status: 'idea', date: '2026-11-18', note: '又没做到 · 档案 #2，21 分' },
+    { id: 'tp3', title: '三分钟热度就三分钟吧，多坚持几个三分钟也好', status: 'idea', date: '2026-11-21', note: '三分钟也行 · 档案 #1，22 分；也可作首篇备选标题' },
+    { id: 'tp4', title: '只想买瓶牛奶，最后拎了 50 元零食出来', status: 'idea', date: '2026-11-25', note: '又没做到 · 档案 #5；双 12 预热，提前 14 天动笔' },
+    { id: 'tp5', title: '我做了 5 个工具治自己，还是没忍住刷手机', status: 'idea', date: '2026-11-28', note: '给自己造个工具 · 档案 #4' },
+    { id: 'tp6', title: '减到 105 斤又胖回 115 斤，这次不打算再折腾自己', status: 'idea', date: '2026-12-02', note: '又没做到 · 档案 #6，已有成稿' },
+    { id: 'tp7', title: '总怕做出来没人用，后来想：直接做了再说', status: 'idea', date: '2026-12-05', note: '给自己造个工具 · 档案 #11' },
+    { id: 'tp8', title: '2027 只围绕三件事：身心、钱、学习或爱好', status: 'idea', date: '2026-12-09', note: '年末与节点 · 档案 #14；反着写「不立 flag」，提前 14 天准备' },
+    { id: 'tb1', title: '我是 INFP，我最大的特点就是三分钟热度', status: 'idea', date: '', note: '首篇备选标题 · 可替换，不单独成文' },
+    { id: 'tb2', title: '坚持不下来的时候，我不再怪自己', status: 'idea', date: '', note: '首篇备选标题 · 可替换，不单独成文' },
+    { id: 'tb3', title: '不谈坚持了，先做三分钟吧', status: 'idea', date: '', note: '首篇备选标题 · 可替换，不单独成文' },
+    { id: 'tb4', title: '三分钟热度又来了，我已经不太意外了', status: 'idea', date: '', note: '首篇备选标题 · 可替换，不单独成文' },
+    { id: 'tb5', title: '做啥都坚持不下去，可我还是一次次重新开始', status: 'idea', date: '', note: '首篇备选标题 · 可替换，不单独成文' },
+    { id: 'tb6', title: '我这种人，大概就只能三分钟三分钟地来', status: 'idea', date: '', note: '首篇备选标题 · 可替换，不单独成文' }
   ],
 
   seedFramework: [
@@ -495,10 +527,22 @@ window.WD_CONTENT = {
       settings: { apiBase: 'https://api.openai.com/v1', apiKey: '', model: 'gpt-4o-mini', useApi: false },
       draftsOpen: false,
       styleVersion: C.styleVersion,
+      topicPackVersion: C.topicPackVersion,
       tab: 'write'
     };
   }
 
+  function mergeTopicPack(st) {
+    var seen = {}, added = 0;
+    (st.topics || []).forEach(function (t) { seen[t.title] = 1; });
+    C.seedTopics.forEach(function (x) {
+      if (seen[x.title]) return;
+      seen[x.title] = 1;
+      st.topics.push({ id: uid(), title: x.title, status: x.status || 'idea', date: x.date || '', note: x.note || '' });
+      added++;
+    });
+    return added;
+  }
   function load() {
     var d = defaultState();
     try {
@@ -508,6 +552,7 @@ window.WD_CONTENT = {
       if (!s || typeof s !== 'object') return d;
       // 必须在补齐默认值之前读旧版本号，否则 styleVersion 会被补成最新值导致迁移不触发
       var priorStyleVersion = s.styleVersion || 1;
+      var priorTopicPackVersion = s.topicPackVersion || 0;
       Object.keys(d).forEach(function (k) { if (s[k] === undefined || s[k] === null) s[k] = d[k]; });
       PF_FIELDS.forEach(function (f) { if (s.profile[f.k] === undefined) s.profile[f.k] = d.profile[f.k]; });
       Object.keys(C.promptTemplates).forEach(function (k) { if (!s.templates[k]) s.templates[k] = C.promptTemplates[k]; });
@@ -524,6 +569,29 @@ window.WD_CONTENT = {
         if (!x.createdAt) x.createdAt = x.updatedAt || Date.now();
       });
       delete s.pipeline;
+      // 选题包：只导一次，按标题去重；顺手清掉系统示例选题（仅未动过的 idea 项）
+      if (priorTopicPackVersion < C.topicPackVersion) {
+        var DEMO = ['把旧文搬到博客后，我想通了什么', '我为什么不追热点了', '一个人做产品，第 30 天的数据'];
+        s.topics = s.topics.filter(function (t) {
+          return !(DEMO.indexOf(t.title) >= 0 && t.status === 'idea');
+        });
+        var added = mergeTopicPack(s);
+        s.topicPackVersion = C.topicPackVersion;
+        if (added) s.topicPackUpdated = added;
+      }
+      // 配图模板尺寸要求：旧默认整体替换；自定义过的只追加尺寸段，不覆盖用户改动
+      if (s.templates.visual === C.legacyVisual) {
+        s.templates.visual = C.promptTemplates.visual;
+        s.visualUpdated = true;
+      } else if (s.templates.visual && s.templates.visual.indexOf('1080 × 1440') < 0) {
+        var nv = C.promptTemplates.visual;
+        var block = nv.slice(nv.indexOf('【尺寸要求'), nv.indexOf('只输出这三行')).trim();
+        var at = s.templates.visual.indexOf('只输出这三行');
+        s.templates.visual = at >= 0
+          ? s.templates.visual.slice(0, at) + block + '\n' + s.templates.visual.slice(at)
+          : s.templates.visual.trim() + '\n' + block;
+        s.visualUpdated = true;
+      }
       // 写法升级：只覆盖画像与随版本管理的两个模板（初稿、终审），
       // 草稿 / 素材 / 选题 / 领域自定义 / 其他模板 / 接口设置一律保留
       if (priorStyleVersion < C.styleVersion) {
@@ -905,22 +973,39 @@ window.WD_CONTENT = {
     $('#materialsBody').innerHTML = h;
   }
 
+  function dateLabel(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
+    if (!m) return v || '';
+    var dt = new Date(+m[1], +m[2] - 1, +m[3]);
+    return (+m[2]) + '/' + (+m[3]) + ' 周' + '日一二三四五六'[dt.getDay()];
+  }
   function renderTopics() {
     var h = '';
     h += '<div class="form-row"><input type="text" id="topicInput" class="grow" placeholder="自己想到一个选题"><button class="btn small" data-act="topic-add">加</button></div>';
-    h += '<div class="subhead">选题池 <span class="tag">' + state.topics.length + ' 个</span></div>';
+    var scheduled = state.topics.filter(function (t) { return !!t.date; }).length;
+    h += '<div class="subhead">选题池 <span class="tag">' + state.topics.length + ' 个</span>' +
+      (scheduled ? '<span class="tag you">' + scheduled + ' 篇已排期</span>' : '') + '</div>';
     if (!state.topics.length) h += '<div class="empty">选题池空着。可以先加素材，再让 AI 基于素材出题。</div>';
-    state.topics.forEach(function (t) {
+    var sorted = state.topics.slice().sort(function (a, b) {
+      if (a.date && b.date) return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0);
+      if (a.date) return -1;
+      if (b.date) return 1;
+      return 0;
+    });
+    sorted.forEach(function (t) {
       var label = t.status === 'done' ? '已写' : (t.status === 'doing' ? '在写' : '待选');
-      h += '<div class="list-item"><div class="list-main"><div class="list-title">' + esc(t.title) + '</div>' +
-        '<div class="list-detail">' + (t.title === draft().title ? '当前正在写这一篇' : '来自素材库或自己想到的') + '</div></div>' +
+      var dl = t.date ? '<span class="tdate">' + esc(dateLabel(t.date)) + '</span>' : '';
+      var detail = t.note || (t.title === draft().title ? '当前正在写这一篇' : '来自素材库或自己想到的');
+      h += '<div class="list-item"><div class="list-main"><div class="list-title">' + dl + esc(t.title) + '</div>' +
+        '<div class="list-detail">' + esc(detail) + '</div></div>' +
         '<div class="list-side"><span class="tag ' + esc(t.status || 'idea') + '">' + label + '</span>' +
         '<button class="btn small" data-act="topic-use" data-id="' + t.id + '">用它写</button>' +
         '<button class="btn small ghost danger" data-act="topic-del" data-id="' + t.id + '">删</button></div></div>';
     });
+    h += '<p class="hint">有日期徽标的是已排期篇目，按发布日期从近到远排；没日期的是备选标题或临时想法，不占发布位。</p>';
     h += '<div class="divider"></div><div class="subhead">批量导入</div>';
     h += '<p class="hint">AI 返回的选题一行一个，粘进来会自动去掉编号并去重。</p>';
-    h += '<div class="btn-row"><button class="btn small" data-act="prompt-topics">复制选题提示词</button><button class="btn small" data-act="paste-topics">粘贴并导入</button></div>';
+    h += '<div class="btn-row"><button class="btn small" data-act="prompt-topics">复制选题提示词</button><button class="btn small" data-act="paste-topics">粘贴并导入</button><button class="btn small" data-act="import-topic-pack">导入这批排期选题</button></div>';
     $('#topicsBody').innerHTML = h;
   }
 
@@ -1208,6 +1293,11 @@ window.WD_CONTENT = {
         state.topics.forEach(function (x) { if (x.id !== id && x.status === 'doing') x.status = 'idea'; });
         save(); go('write'); toast('已设为当前选题，去列框架吧'); break;
       case 'prompt-topics': showPrompt('topics'); break;
+      case 'import-topic-pack':
+        var n = mergeTopicPack(state);
+        state.topicPackVersion = C.topicPackVersion;
+        save(); renderTopics(); renderStat();
+        toast(n ? '导入了 ' + n + ' 条选题（按标题去重）' : '这批选题已经在池子里了'); break;
       case 'prompt-draft': showPrompt('draft'); break;
       case 'prompt-review': showPrompt('review'); break;
       case 'prompt-cover': showPrompt('cover'); break;
@@ -1342,10 +1432,18 @@ window.WD_CONTENT = {
   var initialTab = tabFromHash();
   if (initialTab) state.tab = initialTab;
   var justUpdated = !!state.styleUpdated;
+  var packMsg = state.topicPackUpdated ? '已导入 ' + state.topicPackUpdated + ' 条排期选题' : '';
+  var visualMsg = state.visualUpdated ? '配图模板已补上图片尺寸要求' : '';
   delete state.styleUpdated;
+  delete state.topicPackUpdated;
+  delete state.visualUpdated;
   save();
   renderAll();
-  if (justUpdated) setTimeout(function () { toast('写法已更新 v4：主题外不许跑题，主题内允许写细；草稿和素材都保留着'); }, 400);
+  var notices = [];
+  if (justUpdated) notices.push('写法已更新 v4');
+  if (packMsg) notices.push(packMsg);
+  if (visualMsg) notices.push(visualMsg);
+  if (notices.length) setTimeout(function () { toast(notices.join('；') + '；草稿和素材都保留着'); }, 400);
   window.__WD = {
     getState: function () { return state; },
     go: go,
