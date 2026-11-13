@@ -204,7 +204,7 @@ details.tpl textarea{margin-top:8px;min-height:130px;font-size:12px;font-family:
   </section>
 
   <section class="panel" data-panel="pipeline">
-    <div class="panel-head"><h2>流水线进度</h2><p>五步串联，每步都有回显</p></div>
+    <div class="panel-head"><h2>流水线进度</h2><p>六步串联，每步都有回显</p></div>
     <div id="pipelineBody"></div>
   </section>
 
@@ -257,7 +257,8 @@ window.WD_CONTENT = {
     { id: 'draft',  name: 'AI 初稿',  who: 'ai',  hint: '对齐风格画像生成正文',      action: '生成初稿提示词' },
     { id: 'layout', name: '配图排版', who: 'ai',  hint: '生成配图位并套公众号排版',  action: '生成配图提示词' },
     { id: 'review', name: '你终审',   who: 'you', hint: '查 AI 味、查编造、改回人味', action: '跑终审清单' },
-    { id: 'push',   name: '推草稿箱', who: 'ai',  hint: '复制排版 HTML 供粘贴',       action: '复制排版 HTML' }
+    { id: 'push',   name: '推草稿箱', who: 'ai',  hint: '复制排版 HTML 供粘贴',       action: '复制排版 HTML' },
+    { id: 'cover',  name: '生成封面图', who: 'ai', hint: '按 900×383 头条封面出画面描述', action: '生成封面图提示词' }
   ],
 
   promptTemplates: {
@@ -349,6 +350,30 @@ window.WD_CONTENT = {
       '{{BODY}}'
     ].join('\n'),
 
+    cover: [
+      '为下面这篇公众号文章生成一张头条封面图。先读懂文章，只取一个最有画面感的核心意象，输出一段可直接交给图像生成工具的中文画面描述。',
+      '',
+      '【硬约束】',
+      '尺寸 900 × 383 px，比例约 2.35:1，是超宽横幅，不是竖图。',
+      '风格：干净、扁平插画、暖浅色调、大面积留白、柔和自然光。',
+      '画面里不要出现任何文字、字母、数字、标题、水印、二维码或品牌标识。',
+      '不要人物特写、不要真人照片；不要新增本篇没有的真实数字、日期、地点和人物。',
+      '',
+      '【构图】',
+      '主体只挑一件：本篇里真实出现过、最能代表这件事的物件或角落。',
+      '陪衬最多 2–3 件小物件，且必须来自正文里出现过的东西，不要凭空加意象。',
+      '横幅构图：主体偏一侧，另一侧留白，不要把所有元素居中排成一列。',
+      '情绪贴着文章的调子：零滤镜、松弛、放过自己；不要励志、不要鸡血、不要颓废。',
+      '',
+      '【输出】',
+      '只输出一段中文画面描述，100 字以内，顺序是：主体＋位置＋陪衬物件＋光线色调＋风格与尺寸。',
+      '不要解释、不要给多个方案、不要写「以下是」、不要输出小标题。',
+      '',
+      '【本篇选题】{{TOPIC}}',
+      '【本篇正文】',
+      '{{BODY}}'
+    ].join('\n'),
+
     review: [
       '你是我的终审编辑。按下面的风格画像和本篇选题审这篇稿子。',
       '本篇只允许写【选题】和【框架要点】里的事；但允许围绕这件事适度扩写场景细节、身体感受、心理拉扯和微观画面，让文章有画面、不单薄。**不要把主题内的合理扩写成「编造」误删**。',
@@ -369,6 +394,7 @@ window.WD_CONTENT = {
     topics: '基于素材出选题',
     draft: '写初稿',
     visual: '设计配图',
+    cover: '生成封面图',
     review: '终审清单'
   },
 
@@ -410,7 +436,7 @@ window.WD_CONTENT = {
     '我就想，能不能让 AI 把这套流程接管了，而且还能学我的风格？'
   ].join('\n'),
 
-  about: '流程照「定框架 → AI 初稿 → 配图排版 → 你终审 → 推草稿箱」串起来。框架和终审你自己来，中间交给 AI。默认不接任何付费服务：点生成会拼好提示词并复制，去 WorkBuddy 跑完把结果粘回来即可。'
+  about: '流程照「定框架 → AI 初稿 → 配图排版 → 你终审 → 推草稿箱 → 生成封面图」六步串起来。框架和终审你自己来，中间交给 AI。默认不接任何付费服务：点生成会拼好提示词并复制，去 WorkBuddy 跑完把结果粘回来即可；封面图那步会把返回的画面描述按篇存好，不进正文。'
 };
 
 (function () {
@@ -446,7 +472,7 @@ window.WD_CONTENT = {
 
   function newDraft() {
     return {
-      id: uid(), title: '未命名草稿', framework: '', body: '',
+      id: uid(), title: '未命名草稿', framework: '', body: '', cover: '',
       createdAt: Date.now(), updatedAt: Date.now(), pushed: false,
       pipeline: emptyPipeline()
     };
@@ -494,6 +520,7 @@ window.WD_CONTENT = {
           : emptyPipeline();
         if (!x.pipeline.statuses) x.pipeline.statuses = {};
         if (!x.pipeline.logs) x.pipeline.logs = [];
+        if (x.cover === undefined) x.cover = '';
         if (!x.createdAt) x.createdAt = x.updatedAt || Date.now();
       });
       delete s.pipeline;
@@ -651,6 +678,7 @@ window.WD_CONTENT = {
     if (key === 'draft') foot += '<button class="btn" data-act="paste-draft">粘贴初稿</button>';
     if (key === 'topics') foot += '<button class="btn" data-act="paste-topics">粘贴选题</button>';
     if (key === 'visual') foot += '<button class="btn" data-act="paste-visual">粘贴配图位</button>';
+    if (key === 'cover') foot += '<button class="btn" data-act="paste-cover">粘贴封面描述</button>';
     if (key === 'profile') foot += '<button class="btn" data-act="paste-profile">粘贴画像 JSON</button>';
     foot += '<button class="btn ghost" data-act="close-modal">关闭</button>';
     openModal({
@@ -806,6 +834,16 @@ window.WD_CONTENT = {
       d.pushed = true; d.updatedAt = Date.now(); save(); renderWrite();
       return Promise.resolve({ status: 'done', text: '排版 HTML 已复制，草稿已标记推送' });
     }
+    if (id === 'cover') {
+      if (!auto) { showPrompt('cover'); return Promise.resolve(null); }
+      if (!(d.body || '').trim()) {
+        return Promise.resolve({ status: 'pause', text: '正文还是空的，先写初稿再出封面' });
+      }
+      copy(buildPrompt('cover'), '封面图提示词已复制');
+      return Promise.resolve({ status: 'done', text: d.cover
+        ? '封面提示词已复制；本篇已存封面描述'
+        : '封面提示词已复制，跑完把画面描述粘回来存着' });
+    }
     return Promise.resolve(null);
   }
 
@@ -831,11 +869,11 @@ window.WD_CONTENT = {
       });
     });
     chain.then(function () {
-      pipe().step = 5;
+      pipe().step = C.steps.length;
       save(); renderPipeline();
       running = false;
       $$('.btn.primary').forEach(function (b) { if (b.getAttribute('data-act') === 'run-all') b.disabled = false; });
-      toast('五步跑完了，记得自己通读一遍再发');
+      toast('六步跑完了，记得自己通读一遍再发');
       if (btn) btn.disabled = false;
     }).catch(function (e) {
       running = false;
@@ -938,7 +976,7 @@ window.WD_CONTENT = {
     h += '<div class="field"><label class="fl">框架 · 你来定（一行一点）</label><textarea id="dFramework" rows="5" placeholder="先说背景&#10;我做了哪三件事&#10;一个还没想通的地方">' + esc(d.framework) + '</textarea></div>';
     h += '<div class="field"><label class="fl">正文 · AI 起稿，你终审</label><textarea id="dBody" rows="12" placeholder="一句话一段，段间空一行">' + esc(d.body) + '</textarea></div>';
     h += '<div class="meta-line"><span id="wordCount">' + charCount() + ' 字</span><span>' + bodyBlocks(d.body).length + ' 段</span><span>' + (d.pushed ? '已标记推送' : '未推送') + '</span></div>';
-    h += '<div class="btn-row"><button class="btn small" data-act="prompt-draft">生成初稿提示词</button><button class="btn small" data-act="paste-draft">粘贴初稿</button><button class="btn small" data-act="paste-visual">插入配图位</button><button class="btn small" data-act="copy-md">复制 Markdown</button><button class="btn small" data-act="copy-html">复制排版 HTML</button><button class="btn small" data-act="download-html">下载 HTML</button></div>';
+    h += '<div class="btn-row"><button class="btn small" data-act="prompt-draft">生成初稿提示词</button><button class="btn small" data-act="paste-draft">粘贴初稿</button><button class="btn small" data-act="paste-visual">插入配图位</button><button class="btn small" data-act="prompt-cover">封面图提示词</button><button class="btn small" data-act="copy-md">复制 Markdown</button><button class="btn small" data-act="copy-html">复制排版 HTML</button><button class="btn small" data-act="download-html">下载 HTML</button></div>';
     h += '<div class="subhead">排版预览 <span class="tag">公众号样式</span></div>';
     h += '<div class="wx-preview" id="wxPreview">' + previewHTML() + '</div>';
     h += '<p class="hint">正文里单独写一行 <b>[[配图: 画面描述]]</b>，预览和导出会变成配图位。配图不接付费图床，只给可复制的画面提示词。</p>';
@@ -954,21 +992,25 @@ window.WD_CONTENT = {
     }).length;
     var h = '';
     h += '<div class="btn-row" style="margin-top:0"><button class="btn primary" data-act="run-all">一键生成</button><button class="btn" data-act="reset-pipeline">重置流程</button></div>';
-    h += '<div class="progress-track"><div class="progress-fill" style="width:' + Math.round(done / 5 * 100) + '%"></div></div>';
-    h += '<p class="hint">' + done + '/5 步完成。橙点是需要你动手的环节，AI 环节会自动跑完；不接接口时，AI 环节会把提示词复制好等你粘结果。</p>';
+    h += '<div class="progress-track"><div class="progress-fill" style="width:' + Math.round(done / C.steps.length * 100) + '%"></div></div>';
+    h += '<p class="hint">' + done + '/' + C.steps.length + ' 步完成。橙点是需要你动手的环节，AI 环节会自动跑完；不接接口时，AI 环节会把提示词复制好等你粘结果。</p>';
+    var curDraft = draft();
     C.steps.forEach(function (st, i) {
       var q = s.statuses[st.id] || {};
+      var coverNote = (st.id === 'cover' && curDraft.cover)
+        ? '<div class="step-status">已存封面描述：' + esc(curDraft.cover.slice(0, 42)) + (curDraft.cover.length > 42 ? '…' : '') + '</div>'
+        : '';
       h += '<div class="step ' + esc(q.status || '') + '"><span class="step-dot"></span><div class="step-main">' +
         '<div class="step-top"><span class="step-name">' + (i + 1) + '. ' + st.name + '</span>' +
         '<span class="tag ' + (st.who === 'you' ? 'you' : '') + '">' + (st.who === 'you' ? '你主导' : 'AI 跑') + '</span></div>' +
-        '<div class="step-hint">' + st.hint + '</div>' +
+        '<div class="step-hint">' + st.hint + '</div>' + coverNote +
         (q.text ? '<div class="step-status">' + esc(q.text) + '</div>' : '') +
         '</div><button class="btn small" data-act="step" data-id="' + st.id + '">' + st.action + '</button></div>';
     });
     h += '<div class="subhead">执行日志</div>';
     h += '<div class="log" id="logBox">' + (s.logs.length
       ? esc(s.logs.map(function (l) { return '[' + l.t + '] ' + l.msg; }).join('\n'))
-      : '还没跑过。点上面的「一键生成」，五步会依次执行并回显进度。') + '</div>';
+      : '还没跑过。点上面的「一键生成」，六步会依次执行并回显进度。') + '</div>';
     h += '<div class="subhead">输出</div>';
     h += '<div class="btn-row"><button class="btn small" data-act="copy-html">复制排版 HTML</button><button class="btn small" data-act="copy-md">复制 Markdown</button><button class="btn small" data-act="download-html">下载 HTML</button><button class="btn small" data-act="mark-pushed">标记已推送</button></div>';
     h += '<p class="hint">公众号草稿箱接口要开发者权限和服务器 IP 白名单，纯静态页做不到。这里先给你可直接粘贴进后台的排版 HTML。</p>';
@@ -1060,6 +1102,14 @@ window.WD_CONTENT = {
     save(); renderWrite(); renderStat();
     toast('已把 ' + inserts.length + ' 个配图位均匀插进正文');
   }
+  function pasteCover(v) {
+    var t = v.trim();
+    if (!t) { toast('内容为空'); return true; }
+    var d = draft();
+    d.cover = t.slice(0, 600); d.updatedAt = Date.now();
+    save(); renderWrite(); renderPipeline(); renderDrafts();
+    toast('本篇封面描述已存好');
+  }
   function pasteProfile(v) {
     try {
       var o = JSON.parse(v.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim());
@@ -1094,7 +1144,10 @@ window.WD_CONTENT = {
       o[key].forEach(function (x) {
         if (!x || !x.id || seen[x.id]) return;
         seen[x.id] = 1;
-        if (key === 'drafts' && !x.pipeline) x.pipeline = emptyPipeline();
+        if (key === 'drafts') {
+          if (!x.pipeline) x.pipeline = emptyPipeline();
+          if (x.cover === undefined) x.cover = '';
+        }
         state[key].push(x);
       });
     });
@@ -1157,12 +1210,15 @@ window.WD_CONTENT = {
       case 'prompt-topics': showPrompt('topics'); break;
       case 'prompt-draft': showPrompt('draft'); break;
       case 'prompt-review': showPrompt('review'); break;
+      case 'prompt-cover': showPrompt('cover'); break;
       case 'paste-topics':
         openPaste({ title: '粘贴 AI 返回的选题', note: '一行一个，自动去掉编号和重复项。', label: '导入选题', onSave: function (val) { pasteTopics(val); } }); break;
       case 'paste-draft':
         openPaste({ title: '粘贴初稿', note: '把 WorkBuddy 跑出来的正文整段粘进来，会覆盖当前正文。', label: '写入正文', onSave: pasteDraft }); break;
       case 'paste-visual':
         openPaste({ title: '粘贴配图位', note: '每行形如 [[配图: 画面描述]]，最多取 3 张，均匀插进正文。', label: '插入配图位', onSave: pasteVisual }); break;
+      case 'paste-cover':
+        openPaste({ title: '粘贴封面描述', note: '把 AI 返回的那段画面描述粘进来，会按篇存好，不进正文。', label: '保存封面描述', onSave: pasteCover }); break;
       case 'paste-profile':
         openPaste({ title: '粘贴风格画像 JSON', note: '字段：opening / evidence / paragraph / rhythm / ending / extra。可用校准台生成的 JSON。', label: '导入画像', onSave: pasteProfile }); break;
       case 'open-calibration':
