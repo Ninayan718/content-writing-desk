@@ -342,19 +342,25 @@ window.WD_CONTENT = {
     ].join('\n'),
 
     cover: [
-      '为下面这篇公众号文章生成一张头条封面图。先读懂文章，只取一个最有画面感的核心意象，输出一段可直接交给图像生成工具的中文画面描述。',
+      '为下面这篇公众号文章生成一张头条封面图。先读懂文章，只取本篇里真实出现过、最有画面感的一件物件或一个角落作主体，输出一段可直接交给图像生成工具的中文画面描述。',
       '',
       '【硬约束】',
       '尺寸 900 × 383 px，比例约 2.35:1，是超宽横幅，不是竖图。',
-      '风格：干净、扁平插画、暖浅色调、大面积留白、柔和自然光。',
-      '画面里不要出现任何文字、字母、数字、标题、水印、二维码或品牌标识。',
-      '不要人物特写、不要真人照片；不要新增本篇没有的真实数字、日期、地点和人物。',
+      '风格：胶片感的生活静物摄影——像手机随手拍的真实照片，不是插画、不是渲染图。',
+      '画面中不出现任何文字、字母、数字、水印、二维码或品牌标识；不出现人物；不新增本篇没有的真实数字、日期、地点和人物。',
+      '',
+      '【场景与光线】',
+      '场景：普通生活场景，生活化，不刻意收拾。',
+      '光线：清晨或傍晚的自然窗光，从一侧斜照进来，画面有轻微胶片颗粒。',
+      '色调：暖调低饱和，米白、浅木色、暖灰，像手机随手拍的胶片照片。',
       '',
       '【构图】',
-      '主体只挑一件：本篇里真实出现过、最能代表这件事的物件或角落。',
-      '陪衬最多 2–3 件小物件，且必须来自正文里出现过的东西，不要凭空加意象。',
-      '横幅构图：主体偏一侧，另一侧留白，不要把所有元素居中排成一列。',
-      '情绪贴着文章的调子：零滤镜、松弛、放过自己；不要励志、不要鸡血、不要颓废。',
+      '主体放在画面左侧约三分之一，右侧大面积留白，浅景深。',
+      '陪衬最多 1–2 件小物件，且必须来自正文里出现过的东西，不要凭空加意象。',
+      '情绪贴着文章的调子：零滤镜、松弛、放过自己；不要励志感、不要精致摆拍、不要高饱和色彩。',
+      '',
+      '【暗调变体】若正文核心发生在深夜（熬夜、刷手机、失眠），把光线与色调两行换成：',
+      '深夜，只有一盏台灯的暖黄光打在主体上，四周自然沉入黑暗；深夜墨绿与暖烛黄，低饱和，四角自然压暗。',
       '',
       '【输出】',
       '只输出一段中文画面描述，100 字以内，顺序是：主体＋位置＋陪衬物件＋光线色调＋风格与尺寸。',
@@ -406,6 +412,8 @@ window.WD_CONTENT = {
   // 2026-11-13 导入的真实选题包：8 篇已排期 + 6 条首篇备选标题
   // date 存 ISO，选题页自动换算成「11/14 周六」并按日期排序；date 为空的是备选标题，不排期
   topicPackVersion: 1,
+  // 封面风格版本：2026-11-16 用户确认胶片感生活静物摄影，只同步一次
+  coverStyleVersion: 1,
   seedTopics: [
     { id: 'tp1', title: '做啥都坚持不下去，这件事我认了', status: 'doing', date: '2026-11-14', note: '又没做到 · 首篇已成稿、封面已出；发布后 3–7 天复盘' },
     { id: 'tp2', title: '刷短剧到凌晨 4 点，手一直在向下滑', status: 'idea', date: '2026-11-18', note: '又没做到 · 档案 #2，21 分' },
@@ -500,6 +508,7 @@ window.WD_CONTENT = {
       draftsOpen: false,
       styleVersion: C.styleVersion,
       topicPackVersion: C.topicPackVersion,
+      coverStyleVersion: C.coverStyleVersion,
       tab: 'write'
     };
   }
@@ -525,6 +534,7 @@ window.WD_CONTENT = {
       // 必须在补齐默认值之前读旧版本号，否则 styleVersion 会被补成最新值导致迁移不触发
       var priorStyleVersion = s.styleVersion || 1;
       var priorTopicPackVersion = s.topicPackVersion || 0;
+      var priorCoverStyleVersion = s.coverStyleVersion || 0;
       Object.keys(d).forEach(function (k) { if (s[k] === undefined || s[k] === null) s[k] = d[k]; });
       PF_FIELDS.forEach(function (f) { if (s.profile[f.k] === undefined) s.profile[f.k] = d.profile[f.k]; });
       Object.keys(C.promptTemplates).forEach(function (k) { if (!s.templates[k]) s.templates[k] = C.promptTemplates[k]; });
@@ -562,6 +572,12 @@ window.WD_CONTENT = {
         if (s.domain === '个人成长') s.domain = C.defaultDomain;
         s.styleVersion = C.styleVersion;
         s.styleUpdated = true;
+      }
+      // 封面风格升级：用户确认后只同步一次，之后手动修改不被覆盖
+      if (priorCoverStyleVersion < C.coverStyleVersion) {
+        s.templates.cover = C.promptTemplates.cover;
+        s.coverStyleVersion = C.coverStyleVersion;
+        s.coverUpdated = true;
       }
       if (!s.styleVersion) s.styleVersion = C.styleVersion;
       if (TABS.indexOf(s.tab) < 0) s.tab = 'write';
@@ -1098,7 +1114,7 @@ window.WD_CONTENT = {
     h += '<div class="btn-row"><button class="btn small" data-act="open-calibration">校准我的写法</button><button class="btn small" data-act="paste-profile">粘贴画像 JSON</button></div>';
     h += '<p class="hint">当前是 v4 写法：深夜微信对话框式的零滤镜坦诚、微观生活流切入、边做边想、温柔收尾。初稿模板顶部是两层边界——<b>主题外一步不许迈</b>（严格按选题与框架，硬事实不编，风格举例不是情节），<b>主题内要写细</b>（允许结合生活常识补场景细节、身体感受、内心挣扎与微观画面，别只复述框架）。终审也按两问核对：既删跑题，也补单薄。素材一条不勾不会把别篇经历塞进提示词。这里 6 条可微调，改乱了点「恢复这份写法」复原。注意：校准台会按另一套口径覆盖画像，想保留这份就别再点「校准我的写法」。</p>';
     h += '<div class="divider"></div><div class="subhead">提示词模板</div>';
-    h += '<p class="hint">字段用 {{大写英文}} 占位，保存后会立即生效。</p>';
+    h += '<p class="hint">字段用 {{大写英文}} 占位，保存后会立即生效。封面模板已换成「胶片感生活静物摄影」风格（2026-11-16 确认），生成的是可直接贴给文生图工具的画面描述；正文核心发生在深夜时，模板里的暗调变体会被自动建议。</p>';
     Object.keys(C.promptLabels).forEach(function (k) {
       h += '<details class="tpl"><summary>' + C.promptLabels[k] + '</summary><textarea data-tpl="' + k + '" rows="7">' + esc(state.templates[k]) + '</textarea></details>';
     });
@@ -1406,13 +1422,16 @@ window.WD_CONTENT = {
   if (initialTab) state.tab = initialTab;
   var justUpdated = !!state.styleUpdated;
   var packMsg = state.topicPackUpdated ? '已导入 ' + state.topicPackUpdated + ' 条排期选题' : '';
+  var coverMsg = state.coverUpdated ? '封面模板已换成胶片感生活静物风格' : '';
   delete state.styleUpdated;
   delete state.topicPackUpdated;
+  delete state.coverUpdated;
   save();
   renderAll();
   var notices = [];
   if (justUpdated) notices.push('写法已更新 v4');
   if (packMsg) notices.push(packMsg);
+  if (coverMsg) notices.push(coverMsg);
   if (notices.length) setTimeout(function () { toast(notices.join('；') + '；草稿和素材都保留着'); }, 400);
   window.__WD = {
     getState: function () { return state; },
