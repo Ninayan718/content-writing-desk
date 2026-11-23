@@ -710,12 +710,8 @@ window.WD_CONTENT = {
 
   function pickedMaterials() {
     var arr = state.materials.filter(function (m) { return m.picked; });
-    if (!arr.length) {
-      // 以前一条不勾就把全库塞进去，会把别篇经历带进本篇导致跑题
-      var d = draft();
-      return '（本篇没有勾选素材。只写选题「' + (d.title || '未定') +
-        '」和下面框架里的事；可以围绕这件事适度补场景细节与心理活动，但不要用素材库里其他文章的经历，也不要编数字、日期、他人原话。如需引用别条素材，先去素材页勾选。）';
-    }
+    // 没勾选就是空白：不塞示例素材、不塞系统提示语。素材区只允许出现作者自己勾选的原话。
+    if (!arr.length) return '';
     return arr.map(function (m, i) { return (i + 1) + '. ' + m.title + '：' + (m.detail || ''); }).join('\n');
   }
   function profileText() {
@@ -723,7 +719,10 @@ window.WD_CONTENT = {
     return PF_FIELDS.map(function (f) { return f.label + '：' + (p[f.k] || ''); }).join('\n');
   }
   function fill(tpl, vars) {
-    return tpl.replace(/\{\{(\w+)\}\}/g, function (_, k) { return vars[k] === undefined ? '' : vars[k]; });
+    var out = tpl.replace(/\{\{(\w+)\}\}/g, function (_, k) { return vars[k] === undefined ? '' : vars[k]; });
+    // 素材为空时，连同这一行标签一起删掉，避免提示词里出现空的【真实经历素材】或系统提示语
+    if (!vars.MATERIALS) out = out.replace(/^【真实经历素材】.*$\n?/m, '');
+    return out;
   }
   function buildPrompt(key, extra) {
     var d = draft();
