@@ -91,9 +91,8 @@ input[type=checkbox]{width:16px;height:16px;flex:none;accent-color:var(--accent)
 .progress-track{height:4px;background:#EFE8DC;border-radius:4px;overflow:hidden;margin:12px 0}
 .progress-fill{height:100%;background:var(--accent);width:0;transition:width .35s ease}
 
-.wx-preview{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px 16px;font-size:15px;line-height:1.85;color:#333;word-break:break-word}
-.wx-preview .wx-title{font-size:19px;font-weight:600;line-height:1.5;margin:0 0 18px;color:#222}
-.wx-preview p{margin:0 0 1em}
+.wx-preview{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px 16px;word-break:break-word}
+.wx-preview-inner{word-break:break-word}
 .wx-fig{border:1px dashed var(--line2);background:#FBF7F0;border-radius:8px;padding:14px;text-align:center;color:var(--muted);font-size:12px;margin:0 0 1em}
 .meta-line{font-size:11.5px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
 
@@ -761,28 +760,38 @@ window.WD_CONTENT = {
       return '<span style="font-weight:bold;">' + inner + '</span>';
     });
   }
+  // 预览与导出共用同一套排版参数，做到「预览即所得」
+  // 文末关注钩子：用户自己确认后复制粘贴，不自动写进正文
+  var FOLLOW_HOOK = [
+    '这篇是「又没做到」的第 N 篇。',
+    '都是真事，没做到也会照写。想接着看，就留下来。'
+  ].join('\n');
+  var WX = {
+    body: 'font-size:16px;line-height:1.9;color:#3E3A35;letter-spacing:.3px;',
+    title: 'font-size:20px;font-weight:bold;line-height:1.5;margin:0 0 26px;color:#2F2B27;',
+    para: 'margin:0 0 24px;padding:0;word-break:break-word;',
+    fig: 'margin:24px 0;padding:14px 10px;text-align:center;background:#FAF7F1;border-radius:6px;font-size:12px;line-height:1.6;color:#A69C8C;letter-spacing:.2px;'
+  };
   function previewHTML() {
     var d = draft(), blocks = bodyBlocks(d.body);
-    var h = '<h1 class="wx-title">' + esc(d.title || '未命名草稿') + '</h1>';
-    if (!blocks.length) h += '<p style="color:#B4AA9C">正文还是空的，写完这里会实时排版。</p>';
+    var h = '<div class="wx-preview-inner" style="' + WX.body + 'padding:0 2px;">';
+    h += '<div style="' + WX.title + '">' + esc(d.title || '未命名草稿') + '</div>';
+    if (!blocks.length) h += '<p style="color:#B4AA9C;margin:0">正文还是空的，写完这里会实时排版。</p>';
     blocks.forEach(function (b) {
       var m = figMatch(b);
-      if (m) h += '<div class="wx-fig">配图位 · ' + esc(m[1]) + '</div>';
-      else h += '<p>' + inlineFmt(b).replace(/\n/g, '<br>') + '</p>';
+      if (m) h += '<div style="' + WX.fig + '">配图位 · ' + esc(m[1]) + '</div>';
+      else h += '<p style="' + WX.body + WX.para + '">' + inlineFmt(b).replace(/\n/g, '<br/>') + '</p>';
     });
-    return h;
+    return h + '</div>';
   }
   function exportHTML() {
-    var d = draft(), S = 'font-size:16px;line-height:1.75;color:#3E3A35;';
-    var h = '<section style="' + S + 'padding:0 2px;">';
-    h += '<section style="font-size:20px;font-weight:bold;line-height:1.5;margin:0 0 22px;color:#2F2B27;">' + esc(d.title) + '</section>';
+    var d = draft();
+    var h = '<section style="' + WX.body + 'padding:0 2px;">';
+    h += '<section style="' + WX.title + '">' + esc(d.title) + '</section>';
     bodyBlocks(d.body).forEach(function (b) {
       var m = figMatch(b);
-      if (m) {
-        h += '<section style="margin:20px 0;padding:18px 12px;text-align:center;background:#FAF7F1;border:1px dashed #D9CFC0;font-size:13px;line-height:1.6;color:#9A9082;">配图位：' + esc(m[1]) + '</section>';
-      } else {
-        h += '<section style="' + S + 'margin:0 0 18px;padding:0;word-break:break-word;">' + inlineFmt(b).replace(/\n/g, '<br/>') + '</section>';
-      }
+      if (m) h += '<section style="' + WX.fig + '">配图位 · ' + esc(m[1]) + '</section>';
+      else h += '<section style="' + WX.body + WX.para + '">' + inlineFmt(b).replace(/\n/g, '<br/>') + '</section>';
     });
     return h + '</section>';
   }
@@ -1073,7 +1082,7 @@ window.WD_CONTENT = {
     h += '<div class="field"><label class="fl">正文 · AI 起稿，你终审</label><textarea id="dBody" rows="12" placeholder="一句话一段，段间空一行">' + esc(d.body) + '</textarea>';
     h += '<p class="hint">要加粗的词用两个星号包住，写成 <b>**这样**</b>，预览和复制排版时会变成粗体。用星号包住才生效，手动改字体不算。</p></div>';
     h += '<div class="meta-line"><span id="wordCount">' + charCount() + ' 字</span><span>' + bodyBlocks(d.body).length + ' 段</span><span>' + (d.pushed ? '已标记推送' : '未推送') + '</span></div>';
-    h += '<div class="btn-row"><button class="btn small" data-act="prompt-draft">生成初稿提示词</button><button class="btn small" data-act="paste-draft">粘贴初稿</button><button class="btn small" data-act="prompt-cover">封面图提示词</button><button class="btn small" data-act="copy-md">复制 Markdown</button><button class="btn small" data-act="copy-html">复制排版（直接粘贴）</button><button class="btn small" data-act="copy-source">HTML 源码</button><button class="btn small" data-act="download-html">下载 HTML</button></div>';
+    h += '<div class="btn-row"><button class="btn small" data-act="prompt-draft">生成初稿提示词</button><button class="btn small" data-act="paste-draft">粘贴初稿</button><button class="btn small" data-act="prompt-cover">封面图提示词</button><button class="btn small" data-act="copy-md">复制 Markdown</button><button class="btn small" data-act="copy-html">复制排版（直接粘贴）</button><button class="btn small" data-act="copy-hook">复制关注钩子</button><button class="btn small" data-act="copy-source">HTML 源码</button><button class="btn small" data-act="download-html">下载 HTML</button></div>';
     h += '<div class="subhead">排版预览 <span class="tag">公众号样式</span></div>';
     h += '<div class="wx-preview" id="wxPreview">' + previewHTML() + '</div>';
     $('#writeBody').innerHTML = h;
@@ -1310,6 +1319,7 @@ window.WD_CONTENT = {
       case 'paste-corpus':
         toast('别从旧文提炼了，点「校准我的写法」重新采一次'); break;
       case 'copy-md': copy(markdown(), 'Markdown 已复制'); break;
+      case 'copy-hook': copy(FOLLOW_HOOK, '关注钩子已复制，粘在正文最后一段之后'); break;
       case 'copy-html': copyRich(exportHTML(), markdown(), '排版已复制，直接粘进公众号编辑器'); break;
       case 'copy-rich':
         copyRich(exportHTML(), markdown(), '排版已复制，直接粘进公众号编辑器');
