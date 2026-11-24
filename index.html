@@ -755,6 +755,12 @@ window.WD_CONTENT = {
     return String(body || '').split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
   }
   function figMatch(b) { return b.match(/^\[\[配图[:：]\s*(.+?)\]\]$/); }
+  // 公众号只保留内联样式：先把正文转义，再把 **词** 换成内联加粗 span
+  function inlineFmt(s) {
+    return esc(s).replace(/\*\*([^*\n]+?)\*\*/g, function (_, inner) {
+      return '<span style="font-weight:bold;">' + inner + '</span>';
+    });
+  }
   function previewHTML() {
     var d = draft(), blocks = bodyBlocks(d.body);
     var h = '<h1 class="wx-title">' + esc(d.title || '未命名草稿') + '</h1>';
@@ -762,7 +768,7 @@ window.WD_CONTENT = {
     blocks.forEach(function (b) {
       var m = figMatch(b);
       if (m) h += '<div class="wx-fig">配图位 · ' + esc(m[1]) + '</div>';
-      else h += '<p>' + esc(b).replace(/\n/g, '<br>') + '</p>';
+      else h += '<p>' + inlineFmt(b).replace(/\n/g, '<br>') + '</p>';
     });
     return h;
   }
@@ -775,7 +781,7 @@ window.WD_CONTENT = {
       if (m) {
         h += '<section style="margin:20px 0;padding:18px 12px;text-align:center;background:#FAF7F1;border:1px dashed #D9CFC0;font-size:13px;line-height:1.6;color:#9A9082;">配图位：' + esc(m[1]) + '</section>';
       } else {
-        h += '<section style="' + S + 'margin:0 0 18px;padding:0;word-break:break-word;">' + esc(b).replace(/\n/g, '<br/>') + '</section>';
+        h += '<section style="' + S + 'margin:0 0 18px;padding:0;word-break:break-word;">' + inlineFmt(b).replace(/\n/g, '<br/>') + '</section>';
       }
     });
     return h + '</section>';
@@ -1064,7 +1070,8 @@ window.WD_CONTENT = {
     h += '<div id="draftBar" class="draft-bar"></div>';
     h += '<div class="field"><label class="fl">标题 / 当前选题</label><input type="text" id="dTitle" value="' + esc(d.title) + '"></div>';
     h += '<div class="field"><label class="fl">框架 · 你来定（一行一点）</label><textarea id="dFramework" rows="5" placeholder="先说背景&#10;我做了哪三件事&#10;一个还没想通的地方">' + esc(d.framework) + '</textarea></div>';
-    h += '<div class="field"><label class="fl">正文 · AI 起稿，你终审</label><textarea id="dBody" rows="12" placeholder="一句话一段，段间空一行">' + esc(d.body) + '</textarea></div>';
+    h += '<div class="field"><label class="fl">正文 · AI 起稿，你终审</label><textarea id="dBody" rows="12" placeholder="一句话一段，段间空一行">' + esc(d.body) + '</textarea>';
+    h += '<p class="hint">要加粗的词用两个星号包住，写成 <b>**这样**</b>，预览和复制排版时会变成粗体。用星号包住才生效，手动改字体不算。</p></div>';
     h += '<div class="meta-line"><span id="wordCount">' + charCount() + ' 字</span><span>' + bodyBlocks(d.body).length + ' 段</span><span>' + (d.pushed ? '已标记推送' : '未推送') + '</span></div>';
     h += '<div class="btn-row"><button class="btn small" data-act="prompt-draft">生成初稿提示词</button><button class="btn small" data-act="paste-draft">粘贴初稿</button><button class="btn small" data-act="prompt-cover">封面图提示词</button><button class="btn small" data-act="copy-md">复制 Markdown</button><button class="btn small" data-act="copy-html">复制排版（直接粘贴）</button><button class="btn small" data-act="copy-source">HTML 源码</button><button class="btn small" data-act="download-html">下载 HTML</button></div>';
     h += '<div class="subhead">排版预览 <span class="tag">公众号样式</span></div>';
