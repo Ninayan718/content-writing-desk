@@ -136,6 +136,8 @@ details.tpl textarea{margin-top:8px;min-height:130px;font-size:12px;font-family:
 .draft-list{display:flex;flex-direction:column;gap:7px;max-height:290px;overflow:auto;padding-right:2px}
 .draft-card{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
 .draft-card.on{border-color:var(--accent);background:#FFFDFB}
+.draft-card.archived{background:#F7F7F4;border-color:var(--line2)}
+.draft-card.archived .draft-card-title{color:var(--muted)}
 .draft-card-main{min-width:0;flex:1}
 .draft-card-title{font-size:13px;font-weight:500;word-break:break-word;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .draft-card-meta{font-size:11.5px;color:var(--muted);margin-top:3px}
@@ -489,7 +491,7 @@ window.WD_CONTENT = {
   function newDraft() {
     return {
       id: uid(), title: '未命名草稿', framework: '', body: '', cover: '',
-      createdAt: Date.now(), updatedAt: Date.now(), pushed: false,
+      createdAt: Date.now(), updatedAt: Date.now(), pushed: false, archived: false, archivedAt: 0,
       pipeline: emptyPipeline()
     };
   }
@@ -553,6 +555,8 @@ window.WD_CONTENT = {
         if (!x.pipeline.statuses) x.pipeline.statuses = {};
         if (!x.pipeline.logs) x.pipeline.logs = [];
         if (x.cover === undefined) x.cover = '';
+        if (x.archived === undefined) x.archived = false;
+        if (x.archivedAt === undefined) x.archivedAt = 0;
         if (!x.createdAt) x.createdAt = x.updatedAt || Date.now();
       });
       delete s.pipeline;
@@ -1045,30 +1049,45 @@ window.WD_CONTENT = {
     var box = $('#draftBar');
     if (!box) return;
     var cur = draft(), open = !!state.draftsOpen;
+    var writing = state.drafts.filter(function (x) { return !x.archived; });
+    var archived = state.drafts.filter(function (x) { return !!x.archived; });
     var h = '';
     h += '<div class="draft-bar-top">';
     h += '<div class="draft-now"><span class="draft-kicker">正在写</span><span class="draft-now-title">' + esc(draftLabel(cur)) + '</span>' +
+      (cur.archived ? '<span class="tag done">已存档</span>' : '') +
       '<span class="save-state" id="saveState">' + (lastSavedAt ? '已自动保存 · ' + clockOf(lastSavedAt) : '改动会自动保存') + '</span></div>';
     h += '<div class="draft-bar-actions">' +
       '<button class="btn small primary" data-act="save-draft">保存正文</button>' +
+      (cur.archived
+        ? '<button class="btn small" data-act="unarchive-current">取消存档</button>'
+        : '<button class="btn small" data-act="archive-current">发布存档</button>') +
       '<button class="btn small" data-act="new-draft">写新的一篇</button>' +
-      '<button class="btn small ghost" data-act="toggle-drafts">我的草稿 ' + state.drafts.length + ' 篇 <span class="chev">' + (open ? '▲' : '▼') + '</span></button>' +
+      '<button class="btn small ghost" data-act="toggle-drafts">我的草稿 ' + writing.length + ' 写 / ' + archived.length + ' 存 <span class="chev">' + (open ? '▲' : '▼') + '</span></button>' +
       '</div></div>';
     if (open) {
-      h += '<p class="draft-tip">正文和框架一直自动存着。没定稿就点「写新的一篇」，回头在这里点「接着写」即可；每篇的流水线进度也各自独立。</p>';
-      h += '<div class="draft-list">';
-      state.drafts.slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); }).forEach(function (x) {
-        var isCur = x.id === state.activeDraftId;
-        h += '<div class="draft-card' + (isCur ? ' on' : '') + '">' +
-          '<div class="draft-card-main"><div class="draft-card-title">' + esc(draftLabel(x)) +
-          (isCur ? '<span class="tag you">当前</span>' : (x.pushed ? '<span class="tag done">已推送</span>' : '')) + '</div>' +
-          '<div class="draft-card-meta">' + charsOf(x) + ' 字 · ' + ((x.framework || '').trim() ? '有框架' : '无框架') + ' · ' + whenOf(x.updatedAt) + '</div></div>' +
-          '<div class="draft-card-side">' +
-          (isCur ? '' : '<button class="btn small" data-act="switch-draft" data-id="' + esc(x.id) + '">接着写</button>') +
-          '<button class="btn small ghost danger" data-act="del-draft" data-id="' + esc(x.id) + '">删</button>' +
-          '</div></div>';
-      });
-      h += '</div>';
+      h += '<p class="draft-tip">点「发布存档」把这篇收进已发布区，随时能从下面「调出来」继续改。正文一直自动存着；每篇的流水线进度各自独立。</p>';
+      function cards(list, isArchived) {
+        var out = '';
+        list.slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); }).forEach(function (x) {
+          var isCur = x.id === state.activeDraftId;
+          out += '<div class="draft-card' + (isCur ? ' on' : '') + (isArchived ? ' archived' : '') + '">' +
+            '<div class="draft-card-main"><div class="draft-card-title">' + esc(draftLabel(x)) +
+            (isCur ? '<span class="tag you">当前</span>' : '') +
+            (isArchived ? '<span class="tag done">已发布</span>' : (x.pushed ? '<span class="tag done">已推送</span>' : '')) + '</div>' +
+            '<div class="draft-card-meta">' + charsOf(x) + ' 字 · ' + ((x.framework || '').trim() ? '有框架' : '无框架') + ' · ' +
+            (isArchived && x.archivedAt ? '存于 ' + whenOf(x.archivedAt) : whenOf(x.updatedAt)) + '</div></div>' +
+            '<div class="draft-card-side">' +
+            (isCur ? '' : '<button class="btn small" data-act="switch-draft" data-id="' + esc(x.id) + '">' + (isArchived ? '调出来' : '接着写') + '</button>') +
+            (isArchived ? '<button class="btn small ghost" data-act="unarchive-draft" data-id="' + esc(x.id) + '">取出</button>' : '') +
+            '<button class="btn small ghost danger" data-act="del-draft" data-id="' + esc(x.id) + '">删</button>' +
+            '</div></div>';
+        });
+        return out;
+      }
+      h += '<div class="subhead">正在写 <span class="tag">' + writing.length + ' 篇</span></div>';
+      h += writing.length ? '<div class="draft-list">' + cards(writing, false) + '</div>' : '<div class="empty">没有在写的。点「写新的一篇」开始。</div>';
+      h += '<div class="subhead">已发布存档 <span class="tag done">' + archived.length + ' 篇</span></div>';
+      h += archived.length ? '<div class="draft-list">' + cards(archived, true) + '</div>' : '<div class="empty">还没有存档。发布过的文章点「发布存档」收进来。</div>';
     }
     box.innerHTML = h;
   }
@@ -1237,6 +1256,8 @@ window.WD_CONTENT = {
         if (key === 'drafts') {
           if (!x.pipeline) x.pipeline = emptyPipeline();
           if (x.cover === undefined) x.cover = '';
+          if (x.archived === undefined) x.archived = false;
+          if (x.archivedAt === undefined) x.archivedAt = 0;
         }
         state[key].push(x);
       });
@@ -1251,6 +1272,20 @@ window.WD_CONTENT = {
     var d, v, i;
     switch (act) {
       case 'tab': go(el.getAttribute('data-tab')); break;
+      case 'archive-current':
+        flushWrite();
+        d = draft();
+        if (!(d.body || '').trim()) { toast('正文还是空的，写了再存档'); break; }
+        d.archived = true; d.archivedAt = Date.now(); d.updatedAt = Date.now();
+        save(); renderWrite(); renderDrafts(); toast('已收进「已发布存档」，随时能从下面调出来'); break;
+      case 'unarchive-current':
+        d = draft(); d.archived = false; d.archivedAt = 0; d.updatedAt = Date.now();
+        save(); renderWrite(); renderDrafts(); toast('已取消存档，回到「正在写」'); break;
+      case 'unarchive-draft':
+        var ud = state.drafts.filter(function (x) { return x.id === id; })[0];
+        if (!ud) break;
+        ud.archived = false; ud.archivedAt = 0; ud.updatedAt = Date.now();
+        save(); renderWrite(); renderDrafts(); toast('「' + draftLabel(ud) + '」已取出到「正在写」'); break;
       case 'new-draft':
         flushWrite();
         d = newDraft(); state.drafts.unshift(d); state.activeDraftId = d.id;
