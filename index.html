@@ -280,10 +280,6 @@ window.WD_CONTENT = {
 
     topics: [
       '我是公众号作者，领域是 {{DOMAIN}}。',
-      '下面是我的真实经历素材：',
-      '',
-      '{{MATERIALS}}',
-      '',
       '请基于这些素材给我 8 个公众号选题，要求：',
       '1. 每个都从我的真实经历出发，不追热点、不写宏观趋势。',
       '2. 标题口语化，用我给的数字，不许编造任何数字。',
@@ -305,7 +301,7 @@ window.WD_CONTENT = {
       '### 第一层 · 严格按选题与框架（防跑题）',
       '1. 严格按【框架要点】的顺序和要点展开：每个要点都要写到，不新增章节、不新增话题、不擅自补充框架里没有的阶段或事件。',
       '2. 全文只围绕【选题】这一个核心事件。不写其他文章、其他经历、其他项目、其他时间点发生的事；不因为某个细节「有画面感」就岔开。',
-      '3. 硬事实零编造：数字、日期、他人原话、地点、结果、可核验的事件，只能用【真实经历素材】和【框架要点】里给的，没给的不要补。',
+      '3. 硬事实零编造：数字、日期、他人原话、地点、结果、可核验的事件，只能用【框架要点】里给的，没给的不要补。',
       '4. 风格 DNA 里的举例（熬夜刷短剧、冲动消费、一杯咖啡、深夜亮着的屏幕、衣服变勒、纠结时叹气等）是「可以写到多细」的示范，不是可照抄的情节；与本篇核心事件无关的一律不写。',
       '5. 如果框架某一条与素材对不上，按素材写，不要自行圆一个故事。',
       '',
@@ -333,7 +329,6 @@ window.WD_CONTENT = {
       '',
       '## 本篇信息（唯一的事实来源）',
       '【选题】{{TOPIC}}',
-      '【真实经历素材】{{MATERIALS}}',
       '【框架要点】严格按这些要点展开，不新增章节、不新增话题：',
       '{{FRAMEWORK}}',
       '',
@@ -420,6 +415,8 @@ window.WD_CONTENT = {
   topicPackVersion: 1,
   // 封面风格版本：2026-11-16 用户确认胶片感生活静物摄影，只同步一次
   coverStyleVersion: 1,
+  // 2026-11-26：初稿与选题模板彻底移除素材块（只覆盖一次，之后手动改不被覆盖）
+  materialFreeVersion: 1,
   seedTopics: [
     { id: 'tp1', title: '做啥都坚持不下去，这件事我认了', status: 'doing', date: '2026-11-14', note: '又没做到 · 首篇已成稿、封面已出；发布后 3–7 天复盘' },
     { id: 'tp2', title: '刷短剧到凌晨 4 点，手一直在向下滑', status: 'idea', date: '2026-11-18', note: '又没做到 · 档案 #2，21 分' },
@@ -515,6 +512,7 @@ window.WD_CONTENT = {
       styleVersion: C.styleVersion,
       topicPackVersion: C.topicPackVersion,
       coverStyleVersion: C.coverStyleVersion,
+      materialFreeVersion: C.materialFreeVersion,
       tab: 'write'
     };
   }
@@ -541,6 +539,7 @@ window.WD_CONTENT = {
       var priorStyleVersion = s.styleVersion || 1;
       var priorTopicPackVersion = s.topicPackVersion || 0;
       var priorCoverStyleVersion = s.coverStyleVersion || 0;
+      var priorMaterialFree = s.materialFreeVersion || 0;
       Object.keys(d).forEach(function (k) { if (s[k] === undefined || s[k] === null) s[k] = d[k]; });
       PF_FIELDS.forEach(function (f) { if (s.profile[f.k] === undefined) s.profile[f.k] = d.profile[f.k]; });
       Object.keys(C.promptTemplates).forEach(function (k) { if (!s.templates[k]) s.templates[k] = C.promptTemplates[k]; });
@@ -586,6 +585,14 @@ window.WD_CONTENT = {
         s.templates.cover = C.promptTemplates.cover;
         s.coverStyleVersion = C.coverStyleVersion;
         s.coverUpdated = true;
+      }
+      // 素材块移除：只覆盖 draft 与 topics 两个模板，画像/其他模板/草稿/素材库全部保留
+      if (priorMaterialFree < C.materialFreeVersion) {
+        if (!s.templates) s.templates = {};
+        s.templates.draft = C.promptTemplates.draft;
+        s.templates.topics = C.promptTemplates.topics;
+        s.materialFreeVersion = C.materialFreeVersion;
+        s.materialFreeUpdated = true;
       }
       if (!s.styleVersion) s.styleVersion = C.styleVersion;
       if (TABS.indexOf(s.tab) < 0) s.tab = 'write';
@@ -722,10 +729,7 @@ window.WD_CONTENT = {
     return PF_FIELDS.map(function (f) { return f.label + '：' + (p[f.k] || ''); }).join('\n');
   }
   function fill(tpl, vars) {
-    var out = tpl.replace(/\{\{(\w+)\}\}/g, function (_, k) { return vars[k] === undefined ? '' : vars[k]; });
-    // 素材为空时，连同这一行标签一起删掉，避免提示词里出现空的【真实经历素材】或系统提示语
-    if (!vars.MATERIALS) out = out.replace(/^【真实经历素材】.*$\n?/m, '');
-    return out;
+    return tpl.replace(/\{\{(\w+)\}\}/g, function (_, k) { return vars[k] === undefined ? '' : vars[k]; });
   }
   function buildPrompt(key, extra) {
     var d = draft();
@@ -1479,15 +1483,18 @@ window.WD_CONTENT = {
   var justUpdated = !!state.styleUpdated;
   var packMsg = state.topicPackUpdated ? '已导入 ' + state.topicPackUpdated + ' 条排期选题' : '';
   var coverMsg = state.coverUpdated ? '封面模板已换成胶片感生活静物风格' : '';
+  var matFreeMsg = state.materialFreeUpdated ? '初稿与选题提示词已移除素材块（不再抓取别篇经历）' : '';
   delete state.styleUpdated;
   delete state.topicPackUpdated;
   delete state.coverUpdated;
+  delete state.materialFreeUpdated;
   save();
   renderAll();
   var notices = [];
   if (justUpdated) notices.push('写法已更新 v4');
   if (packMsg) notices.push(packMsg);
   if (coverMsg) notices.push(coverMsg);
+  if (matFreeMsg) notices.push(matFreeMsg);
   if (notices.length) setTimeout(function () { toast(notices.join('；') + '；草稿和素材都保留着'); }, 400);
   window.__WD = {
     getState: function () { return state; },
